@@ -34,9 +34,11 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
         <a href={getLocalePath(locale)} class="logo">FORGE<span>GAMING</span></a>
         <div class="nav-links">
           <a href={getLocalePath(locale)} class="nav-link">{t.nav.home}</a>
-          <a href={`${getLocalePath(locale)}/about`} class="nav-link">{t.nav.about}</a>
-          <a href={`${getLocalePath(locale)}/login`} class="nav-link nav-link-login">{t.nav.login}</a>
-          <a href={`${getLocalePath(locale)}/register`} class="nav-link nav-link-register">{t.nav.register}</a>
+          <a href={getLocalePath(locale, '/login')} class="nav-link nav-link-login">{t.nav.login}</a
+          >
+          <a href={getLocalePath(locale, '/register')} class="nav-link nav-link-register"
+            >{t.nav.register}</a
+          >
           <a href={altPath} class="lang-switch">{t.nav.languageSwitch}</a>
         </div>
       </div>
@@ -53,8 +55,8 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
           <span class="footer-copy">&copy; 2026 ForgeGaming. {t.footer.rights}</span>
         </div>
         <div class="footer-right">
-          <a href={`${getLocalePath(locale)}/privacy`} class="footer-link">{t.footer.privacy}</a>
-          <a href={`${getLocalePath(locale)}/terms`} class="footer-link">{t.footer.terms}</a>
+          <span class="footer-link" style="cursor:default;opacity:0.5;">{t.footer.privacy}</span>
+          <span class="footer-link" style="cursor:default;opacity:0.5;">{t.footer.terms}</span>
         </div>
       </div>
     </footer>
@@ -64,12 +66,12 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
         --bg: #161618;
         --bg-card: rgba(30, 30, 34, 0.9);
         --bg-card-solid: #1e1e22;
-        --accent: #FF4500;
+        --accent: #ff4500;
         --accent-dim: rgba(255, 69, 0, 0.15);
-        --gold: #FFD700;
+        --gold: #ffd700;
         --gold-dim: rgba(255, 215, 0, 0.15);
-        --text: #E8E8E8;
-        --text-dim: #7A7A82;
+        --text: #e8e8e8;
+        --text-dim: #7a7a82;
         --border: rgba(255, 69, 0, 0.2);
         --border-soft: rgba(255, 255, 255, 0.06);
       }
@@ -83,7 +85,11 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
       body {
         background: var(--bg);
         color: var(--text);
-        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        font-family:
+          'Segoe UI',
+          system-ui,
+          -apple-system,
+          sans-serif;
         line-height: 1.6;
         overflow-x: hidden;
       }

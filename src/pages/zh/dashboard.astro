@@ -81,7 +81,10 @@ const dimensions = [
     translations={t.dashboard}
     dimensions={dimensions}
     loginPath={getLocalePath(locale, '/login')}
-    testPath={getLocalePath(locale, '/test')}
-    basePath={getLocalePath(locale)}
+    logoutLabel={t.nav.logout}
+    testPath={getLocalePath(locale, '/train/d1')}
+    trainEntryPath={getLocalePath(locale, '/train/d1')}
+    homePath={getLocalePath(locale)}
+    getDimensionPath={(id: number) => getLocalePath(locale, `/train/d${id}`)}
   />
 </BaseLayout>

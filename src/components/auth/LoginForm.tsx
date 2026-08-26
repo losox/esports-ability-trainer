@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import type { Locale } from '../../i18n/ui';
 
 interface Props {
@@ -32,11 +32,15 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
 
   useEffect(() => {
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = dashboardPath;
+      const sb = getSupabase();
+      if (!sb) return;
+      try {
+        const {
+          data: { session },
+        } = await sb.auth.getSession();
+        if (session) window.location.href = dashboardPath;
+      } catch {
+        /* ignore session check errors */
       }
     };
     checkSession();
@@ -56,16 +60,25 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
         return;
       }
 
-      setLoading(true);
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      setLoading(false);
-
-      if (authError) {
-        setError(authError.message.includes('Invalid') ? t.errorInvalid : t.errorGeneric);
+      const sb = getSupabase();
+      if (!sb) {
+        setError(t.errorGeneric);
         return;
       }
 
-      window.location.href = dashboardPath;
+      setLoading(true);
+      try {
+        const { error: authError } = await sb.auth.signInWithPassword({ email, password });
+        if (authError) {
+          setError(authError.message.includes('Invalid') ? t.errorInvalid : t.errorGeneric);
+          return;
+        }
+        window.location.href = dashboardPath;
+      } catch {
+        setError(t.errorGeneric);
+      } finally {
+        setLoading(false);
+      }
     },
     [email, password, t, dashboardPath],
   );
@@ -73,12 +86,22 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
   const handleOAuth = useCallback(
     async (provider: 'github' | 'google') => {
       setError(null);
+      const sb = getSupabase();
+      if (!sb) {
+        setError(t.errorGeneric);
+        return;
+      }
       setLoading(true);
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: `${window.location.origin}${dashboardPath}` },
-      });
-      if (oauthError) {
+      try {
+        const { error: oauthError } = await sb.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: `${window.location.origin}${dashboardPath}` },
+        });
+        if (oauthError) {
+          setLoading(false);
+          setError(t.errorGeneric);
+        }
+      } catch {
         setLoading(false);
         setError(t.errorGeneric);
       }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import {
   getDimensionStats,
   getRecentSessions,
@@ -42,8 +42,12 @@ interface Props {
   };
   dimensions: DimensionInfo[];
   loginPath: string;
+  logoutLabel: string;
   testPath: string;
-  basePath: string;
+  trainEntryPath: string;
+  homePath: string;
+  // Link factory: given a dimension id, return the train/test page URL (already locale-prefixed)
+  getDimensionPath: (dimensionId: number) => string;
 }
 
 function formatDateAgo(dateStr: string, locale: Locale): string {
@@ -72,8 +76,11 @@ export default function Dashboard({
   translations: t,
   dimensions,
   loginPath,
+  logoutLabel,
   testPath,
-  basePath,
+  trainEntryPath,
+  homePath,
+  getDimensionPath,
   locale,
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
@@ -84,38 +91,54 @@ export default function Dashboard({
 
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = loginPath;
+      const sb = getSupabase();
+      if (!sb) {
+        // Supabase 未配置：直接展示仪表盘（无登录、无数据，UI 显示占位值）
+        setChecking(false);
+        setLoadingStats(false);
         return;
       }
-      setUser(session.user);
-      setChecking(false);
+      try {
+        const {
+          data: { session },
+        } = await sb.auth.getSession();
+        if (!session) {
+          window.location.href = loginPath;
+          return;
+        }
+        setUser(session.user);
+        setChecking(false);
 
-      // Load stats for all dimensions
-      const statsPromises = dimensions.map((d) => getDimensionStats(d.id));
-      const [statsResults, sessions] = await Promise.all([
-        Promise.all(statsPromises),
-        getRecentSessions(8),
-      ]);
+        // Load stats for all dimensions
+        const statsPromises = dimensions.map((d) => getDimensionStats(d.id));
+        const [statsResults, sessions] = await Promise.all([
+          Promise.all(statsPromises),
+          getRecentSessions(8),
+        ]);
 
-      const statsMap: Record<number, DimensionStats> = {};
-      statsResults.forEach((s) => {
-        statsMap[s.dimensionId] = s;
-      });
-      setStatsByDimension(statsMap);
-      setRecentSessions(sessions);
-      setLoadingStats(false);
+        const statsMap: Record<number, DimensionStats> = {};
+        statsResults.forEach((s) => {
+          statsMap[s.dimensionId] = s;
+        });
+        setStatsByDimension(statsMap);
+        setRecentSessions(sessions);
+      } catch (err) {
+        console.error('Dashboard auth/load error:', err);
+        setLoadingStats(false);
+      }
     };
     checkAuth();
   }, [loginPath, dimensions]);
 
   const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
-    window.location.href = basePath;
-  }, [basePath]);
+    try {
+      const sb = getSupabase();
+      if (sb) await sb.auth.signOut();
+    } catch {
+      /* ignore sign-out errors */
+    }
+    window.location.href = homePath;
+  }, [homePath]);
 
   if (checking) {
     return (
@@ -137,7 +160,7 @@ export default function Dashboard({
           <p className="dash-subtitle">{t.subtitle}</p>
         </div>
         <button className="logout-btn" onClick={handleLogout}>
-          Logout
+          {logoutLabel}
         </button>
       </header>
 
@@ -149,13 +172,13 @@ export default function Dashboard({
             <div className="action-desc">{t.quickTestDesc}</div>
           </div>
         </a>
-        <div className="action-card action-train">
+        <a className="action-card action-train" href={trainEntryPath}>
           <div className="action-icon">🎯</div>
           <div className="action-text">
             <div className="action-title">{t.startTraining}</div>
             <div className="action-desc">{t.startTrainingDesc}</div>
           </div>
-        </div>
+        </a>
       </div>
 
       <section className="dash-dimensions">
@@ -188,10 +211,10 @@ export default function Dashboard({
                   </div>
                 </div>
                 <div className="dim-item-actions">
-                  <a className="dim-btn dim-btn-train" href={`${basePath}/train/d${d.id}`}>
+                  <a className="dim-btn dim-btn-train" href={getDimensionPath(d.id)}>
                     {t.train}
                   </a>
-                  <a className="dim-btn dim-btn-test" href={`${testPath}?d=${d.id}`}>
+                  <a className="dim-btn dim-btn-test" href={getDimensionPath(d.id)}>
                     {t.test}
                   </a>
                 </div>

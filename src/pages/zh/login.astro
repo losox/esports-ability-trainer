@@ -51,4 +51,143 @@ const t = getTranslations(locale);
     font-size: 0.9rem;
     margin-bottom: 28px;
   }
+  :global(.auth-form) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  :global(.oauth-btn) {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-card-solid);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  :global(.oauth-btn:hover:not(:disabled)) {
+    border-color: var(--border);
+  }
+  :global(.oauth-btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  :global(.oauth-github:hover:not(:disabled)) {
+    border-color: var(--accent);
+  }
+  :global(.oauth-google:hover:not(:disabled)) {
+    border-color: var(--gold);
+  }
+  :global(.divider) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin: 4px 0;
+  }
+  :global(.divider::before),
+  :global(.divider::after) {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+  :global(.divider span) {
+    padding: 0 4px;
+  }
+  :global(.field) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  :global(.field label) {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  :global(.field input) {
+    padding: 10px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-card-solid);
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+  :global(.field input:focus) {
+    outline: none;
+    border-color: var(--accent);
+  }
+  :global(.error-msg) {
+    color: #ff4444;
+    font-size: 0.82rem;
+    padding: 4px 0;
+  }
+  :global(.submit-btn) {
+    width: 100%;
+    padding: 12px;
+    border-radius: 4px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  :global(.submit-btn:hover:not(:disabled)) {
+    box-shadow: 0 0 16px rgba(255, 69, 0, 0.4);
+  }
+  :global(.submit-btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  :global(.switch-link) {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  :global(.switch-link a) {
+    color: var(--gold);
+    font-weight: 600;
+  }
+  :global(.pref-section) {
+    margin: 8px 0;
+  }
+  :global(.pref-title) {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  :global(.pref-subtitle) {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  :global(.pref-options) {
+    display: flex;
+    gap: 8px;
+  }
+  :global(.pref-btn) {
+    flex: 1;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-card-solid);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  :global(.pref-btn.active) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
 </style>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import type { Locale } from '../../i18n/ui';
 
 type Preference = 'fps' | 'moba' | 'all';
@@ -43,11 +43,15 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
 
   useEffect(() => {
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = dashboardPath;
+      const sb = getSupabase();
+      if (!sb) return;
+      try {
+        const {
+          data: { session },
+        } = await sb.auth.getSession();
+        if (session) window.location.href = dashboardPath;
+      } catch {
+        /* ignore */
       }
     };
     checkSession();
@@ -71,23 +75,32 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
         return;
       }
 
-      setLoading(true);
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { preference: pref } },
-      });
-      setLoading(false);
-
-      if (signUpError) {
-        setError(signUpError.message.includes('already') ? t.errorExists : t.errorGeneric);
+      const sb = getSupabase();
+      if (!sb) {
+        setError(t.errorGeneric);
         return;
       }
 
-      if (data.session) {
-        window.location.href = dashboardPath;
-      } else {
-        window.location.href = `${loginPath}?verified=1`;
+      setLoading(true);
+      try {
+        const { data, error: signUpError } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { preference: pref } },
+        });
+        if (signUpError) {
+          setError(signUpError.message.includes('already') ? t.errorExists : t.errorGeneric);
+          return;
+        }
+        if (data.session) {
+          window.location.href = dashboardPath;
+        } else {
+          window.location.href = `${loginPath}?verified=1`;
+        }
+      } catch {
+        setError(t.errorGeneric);
+      } finally {
+        setLoading(false);
       }
     },
     [email, password, confirm, pref, t, dashboardPath, loginPath],
@@ -96,14 +109,22 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
   const handleOAuth = useCallback(
     async (provider: 'github' | 'google') => {
       setError(null);
+      const sb = getSupabase();
+      if (!sb) {
+        setError(t.errorGeneric);
+        return;
+      }
       setLoading(true);
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}${dashboardPath}`,
-        },
-      });
-      if (oauthError) {
+      try {
+        const { error: oauthError } = await sb.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: `${window.location.origin}${dashboardPath}` },
+        });
+        if (oauthError) {
+          setLoading(false);
+          setError(t.errorGeneric);
+        }
+      } catch {
         setLoading(false);
         setError(t.errorGeneric);
       }
