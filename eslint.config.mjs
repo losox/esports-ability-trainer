@@ -43,6 +43,23 @@ export default [
     },
   },
   {
+    files: ['*.config.ts', '*.config.mjs', '*.config.js', 'scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        URL: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
+        global: 'readonly',
+      },
+    },
+  },
+  {
     ignores: ['dist/', 'node_modules/', '.astro/', 'design/'],
   },
 ];
