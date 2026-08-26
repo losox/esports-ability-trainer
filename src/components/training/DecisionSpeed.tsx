@@ -10,6 +10,7 @@ import {
   type GameVersion,
   type RoundResult,
 } from '../../modules/d8-decision/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -52,6 +53,8 @@ const STR = {
     locked: 'Locked',
     ms: 'ms',
     exit: 'Exit',
+    saving: 'Saving...',
+    saved: 'Saved!',
   },
   zh: {
     title: 'D8 决策速度',
@@ -86,12 +89,15 @@ const STR = {
     locked: '已锁定',
     ms: 'ms',
     exit: '退出',
+    saving: '保存中...',
+    saved: '已保存！',
   },
 };
 
 export default function DecisionSpeed({ locale, version = 'fps', onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<DecisionScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<GameVersion>(version);
   const [round, setRound] = useState(0);
@@ -104,6 +110,8 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
   const [damageFlash, setDamageFlash] = useState(false);
   const [finalResults, setFinalResults] = useState<RoundResult[]>([]);
   const [survivedRounds, setSurvivedRounds] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
   const decisionTimesRef = useRef<number[]>([]);
@@ -119,6 +127,8 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
     if (!containerRef.current) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setRound(0);
     setHp(PLAYER_MAX_HP);
     setLastDecision(null);
@@ -127,6 +137,7 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
     setFinalResults([]);
     setSurvivedRounds(0);
     decisionTimesRef.current = [];
+    startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
     sceneRef.current = new DecisionScene(containerRef.current, selectedVersion, {
@@ -156,6 +167,36 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
         setFinalResults(results);
         setSurvivedRounds(survived);
         const score = calculateScore(survived, results);
+        const avgDecisionTime = calculateFirstDecisionTime(results);
+        const totalDamage = calculateTotalDamage(results);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 8,
+          version: selectedVersion,
+          totalScore: score,
+          groups: [
+            {
+              groupIndex: 1,
+              score,
+              subMetrics: {
+                survivedRounds: survived,
+                avgDecisionTime,
+                totalDamage,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(score);
       },
       onPointerLockChange: (locked) => {
@@ -284,6 +325,11 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{survivedRounds > 0 ? s.complete : s.gameOver}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -585,6 +631,16 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
           color: #FF4500;
           font-size: 1.8rem;
           font-family: Impact, sans-serif;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

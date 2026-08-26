@@ -9,6 +9,7 @@ import {
   MAX_FAILS,
   type KillResult,
 } from '../../modules/d3-tracking/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -33,6 +34,8 @@ const STR = {
     gameOver: 'Game Over',
     grade: 'Grade',
     ms: 'ms',
+    saving: 'Saving...',
+    saved: 'Saved!',
     instruction:
       'Track moving targets and hold fire to deal damage. Kill targets before time runs out. 3 fails ends the session.',
     hold: 'Hold mouse button to fire',
@@ -54,6 +57,8 @@ const STR = {
     gameOver: '游戏结束',
     grade: '评级',
     ms: 'ms',
+    saving: '保存中...',
+    saved: '已保存！',
     instruction: '追踪移动靶并按住开火造成伤害。在时间结束前击杀目标。3次失败结束训练。',
     hold: '按住鼠标键持续开火',
   },
@@ -62,6 +67,7 @@ const STR = {
 export default function TargetTracking({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<TrackingScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [done, setDone] = useState(false);
@@ -74,6 +80,8 @@ export default function TargetTracking({ locale, onComplete }: Props) {
   const [timeLimit, setTimeLimit] = useState(8000);
   const [accuracy, setAccuracy] = useState(0);
   const [isOver, setIsOver] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -89,12 +97,15 @@ export default function TargetTracking({ locale, onComplete }: Props) {
     setStarted(true);
     setDone(false);
     setIsOver(false);
+    setSaving(false);
+    setSaved(false);
     setKills([]);
     setFails(0);
     setDifficulty(0);
     setHealth(100);
     setMaxHealth(100);
     setAccuracy(0);
+    startTimeRef.current = Date.now();
     sceneRef.current?.dispose();
     sceneRef.current = new TrackingScene(containerRef.current, {
       onHealthUpdate: (hp, max) => {
@@ -125,8 +136,41 @@ export default function TargetTracking({ locale, onComplete }: Props) {
         setIsOver(allFails >= MAX_FAILS);
         setKills(allKills);
         setFails(allFails);
-        const score = calculateScore(allKills);
-        onComplete?.(score);
+        const finalScore = calculateScore(allKills);
+        const overallAcc = calculateOverallAccuracy(allKills);
+        const avgKT = calculateAvgKillTime(allKills);
+        const smooth = calculateOverallSmoothness(allKills);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 3,
+          version: 'fps',
+          totalScore: finalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: finalScore,
+              subMetrics: {
+                accuracy: overallAcc,
+                avgKillTime: avgKT,
+                smoothness: smooth,
+                kills: allKills.length,
+                fails: allFails,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
+        onComplete?.(finalScore);
       },
     });
     sceneRef.current.start();
@@ -215,6 +259,11 @@ export default function TargetTracking({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{isOver ? s.gameOver : s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.kills}</span>
@@ -450,6 +499,16 @@ export default function TargetTracking({ locale, onComplete }: Props) {
           color: #FF4500;
           font-size: 2rem;
           font-family: Impact, sans-serif;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

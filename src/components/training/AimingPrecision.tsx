@@ -9,6 +9,7 @@ import {
   MAX_MISSES,
   type HitResult,
 } from '../../modules/d2-aim/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -33,6 +34,8 @@ const STR = {
     targetsHit: 'Targets Hit',
     grade: 'Grade',
     ms: 'ms',
+    saving: 'Saving...',
+    saved: 'Saved!',
     paused: 'Paused',
     instruction:
       'Single-shot precision training. Aim for headshots on 3D humanoid targets. 3 misses ends the session.',
@@ -54,6 +57,8 @@ const STR = {
     targetsHit: '命中数',
     grade: '评级',
     ms: 'ms',
+    saving: '保存中...',
+    saved: '已保存！',
     paused: '已暂停',
     instruction: '单发精准训练。瞄准3D人形靶头部。3次脱靶结束训练。',
   },
@@ -62,6 +67,7 @@ const STR = {
 export default function AimingPrecision({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<AimingScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [done, setDone] = useState(false);
@@ -70,6 +76,8 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
   const [targetIdx, setTargetIdx] = useState(0);
   const [difficulty, setDifficulty] = useState(0);
   const [isOver, setIsOver] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -85,10 +93,13 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
     setStarted(true);
     setDone(false);
     setIsOver(false);
+    setSaving(false);
+    setSaved(false);
     setHits([]);
     setMisses(0);
     setTargetIdx(0);
     setDifficulty(0);
+    startTimeRef.current = Date.now();
     sceneRef.current?.dispose();
     sceneRef.current = new AimingScene(containerRef.current, {
       onHit: (hit) => {
@@ -111,8 +122,41 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
         setIsOver(allMisses >= MAX_MISSES);
         setHits(allHits);
         setMisses(allMisses);
-        const score = calculateScore(allHits);
-        onComplete?.(score);
+        const finalScore = calculateScore(allHits);
+        const hsRate = calculateHeadshotRate(allHits);
+        const avgAimTime = calculateAvgAimTime(allHits);
+        const hmRatio = calculateHitMissRatio(allHits, allMisses);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 2,
+          version: 'fps',
+          totalScore: finalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: finalScore,
+              subMetrics: {
+                headshotRate: hsRate,
+                avgAimTime,
+                hitMissRatio: Math.round(hmRatio * 100) / 100,
+                targetsHit: allHits.length,
+                misses: allMisses,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
+        onComplete?.(finalScore);
       },
     });
     sceneRef.current.start();
@@ -203,6 +247,11 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{isOver ? s.gameOver : s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -418,6 +467,16 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
           color: #FF4500;
           font-size: 2rem;
           font-family: Impact, sans-serif;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

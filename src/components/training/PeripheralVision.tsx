@@ -8,6 +8,7 @@ import {
   calculateCapacityLevel,
   type PeripheralStats,
 } from '../../modules/d4-peripheral/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 type Version = 'fps' | 'moba';
 type TargetKind = 'center' | 'edge';
@@ -34,6 +35,8 @@ const STR = {
     complete: 'Game Over',
     grade: 'Grade',
     capacity: 'Capacity',
+    saving: 'Saving...',
+    saved: 'Saved!',
     fpsDesc: 'Shoot center & edge targets. Edge targets flash briefly — use peripheral vision!',
     mobaDesc: 'Monsters spawn from all directions. Click to eliminate before they reach the tower!',
     towerHP: 'Tower HP',
@@ -57,6 +60,8 @@ const STR = {
     complete: '游戏结束',
     grade: '评级',
     capacity: '能力等级',
+    saving: '保存中...',
+    saved: '已保存！',
     fpsDesc: '射击中央和边缘目标。边缘目标一闪即逝——用余光捕捉！',
     mobaDesc: '怪物从四面八方出现，在它们到达塔之前点击消灭！',
     towerHP: '塔生命',
@@ -70,6 +75,12 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fpsSceneRef = useRef<PeripheralSceneFPS | null>(null);
   const mobaSceneRef = useRef<PeripheralSceneMOBA | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const edgeHitsRef = useRef<number>(0);
+  const edgeAppearancesRef = useRef<number>(0);
+  const missesRef = useRef<number>(0);
+  const maxSimRef = useRef<number>(0);
+  const edgeReactionTimesRef = useRef<number[]>([]);
   const [, setVersion] = useState<Version>('fps');
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
   const [started, setStarted] = useState(false);
@@ -83,6 +94,8 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
   const [maxSim, setMaxSim] = useState(0);
   const [edgeReactionTimes, setEdgeReactionTimes] = useState<number[]>([]);
   const [pointerLocked, setPointerLocked] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -116,6 +129,8 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
     if (!containerRef.current || !selectedVersion) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setScore(0);
     setMisses(0);
     setDifficulty(1);
@@ -125,6 +140,12 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
     setMaxSim(0);
     setEdgeReactionTimes([]);
     setPointerLocked(false);
+    startTimeRef.current = Date.now();
+    edgeHitsRef.current = 0;
+    edgeAppearancesRef.current = 0;
+    missesRef.current = 0;
+    maxSimRef.current = 0;
+    edgeReactionTimesRef.current = [];
 
     fpsSceneRef.current?.dispose();
     fpsSceneRef.current = null;
@@ -133,21 +154,70 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
 
     const callbacks = {
       onScore: (s: number) => setScore(s),
-      onMiss: (m: number) => setMisses(m),
+      onMiss: (m: number) => {
+        setMisses(m);
+        missesRef.current = m;
+      },
       onHit: (kind: TargetKind, reactionTime: number) => {
         if (kind === 'edge') {
           setEdgeHits((h) => h + 1);
+          edgeHitsRef.current += 1;
           setEdgeReactionTimes((prev) => [...prev, reactionTime]);
+          edgeReactionTimesRef.current = [...edgeReactionTimesRef.current, reactionTime];
         }
       },
       onDifficultyChange: (level: number) => setDifficulty(level),
-      onEdgeAppear: (total: number) => setEdgeAppearances(total),
+      onEdgeAppear: (total: number) => {
+        setEdgeAppearances(total);
+        edgeAppearancesRef.current = total;
+      },
       onGameOver: (finalScore: number) => {
         setDone(true);
+        const durationMs = Date.now() - startTimeRef.current;
+        const eRate =
+          edgeAppearancesRef.current > 0
+            ? calculateEdgeDetectionRate(edgeHitsRef.current, edgeAppearancesRef.current)
+            : 0;
+        const avgER =
+          edgeReactionTimesRef.current.length > 0
+            ? calculateEdgeReactionTime(edgeReactionTimesRef.current)
+            : 0;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 4,
+          version: selectedVersion ?? 'fps',
+          totalScore: finalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: finalScore,
+              subMetrics: {
+                edgeDetectionRate: Math.round(eRate * 100),
+                avgEdgeReactionTime: avgER,
+                maxSimultaneous: maxSimRef.current,
+                edgeHits: edgeHitsRef.current,
+                misses: missesRef.current,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(finalScore);
       },
       onTowerHP: (hp: number) => setTowerHP(hp),
-      onMaxSimultaneous: (count: number) => setMaxSim(count),
+      onMaxSimultaneous: (count: number) => {
+        setMaxSim(count);
+        maxSimRef.current = Math.max(maxSimRef.current, count);
+      },
     };
 
     if (selectedVersion === 'fps') {
@@ -258,6 +328,11 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -498,6 +573,16 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
           font-weight: 600;
           font-size: 0.9rem;
           margin-bottom: 24px;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

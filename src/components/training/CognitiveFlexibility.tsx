@@ -10,6 +10,7 @@ import {
   type SwitchEvent,
   type PatternCompletion,
 } from '../../modules/d7-flexibility/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -51,6 +52,8 @@ const STR = {
     none: 'None',
     sec: 's',
     ms: 'ms',
+    saving: 'Saving...',
+    saved: 'Saved!',
   },
   zh: {
     title: 'D7 认知灵活性',
@@ -85,6 +88,8 @@ const STR = {
     none: '无',
     sec: '秒',
     ms: 'ms',
+    saving: '保存中...',
+    saved: '已保存！',
   },
 };
 
@@ -103,6 +108,7 @@ function formatTime(ms: number): string {
 export default function CognitiveFlexibility({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<FlexibilityScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION_MS);
@@ -111,6 +117,8 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
   const [playerBoard, setPlayerBoard] = useState<BoardId | null>(null);
   const [switchEvents, setSwitchEvents] = useState<SwitchEvent[]>([]);
   const [completions, setCompletions] = useState<PatternCompletion[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -125,12 +133,15 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
     if (!containerRef.current) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setTimeLeft(SESSION_DURATION_MS);
     setPatternTime(PATTERN_TIME_LIMIT_MS);
     setActiveBoard(null);
     setPlayerBoard(null);
     setSwitchEvents([]);
     setCompletions([]);
+    startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
     sceneRef.current = new FlexibilityScene(containerRef.current, {
@@ -146,6 +157,35 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
       },
       onSessionComplete: (metrics) => {
         setDone(true);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 7,
+          version: 'universal',
+          totalScore: metrics.totalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: metrics.totalScore,
+              subMetrics: {
+                totalCompletions: metrics.totalCompletions,
+                avgSwitchReactionMs: metrics.avgSwitchReactionMs,
+                firstSwitchAccuracy: metrics.firstSwitchAccuracy,
+                postSwitchErrorRate: metrics.postSwitchErrorRate,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(metrics.totalScore);
       },
     });
@@ -286,6 +326,11 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -600,6 +645,16 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
           color: #FF4500;
           font-size: 2rem;
           font-family: Impact, sans-serif;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

@@ -5,6 +5,7 @@ import {
   calculateConsistency,
   calculateGrade,
 } from '../../modules/d1-reaction/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -25,6 +26,8 @@ const STR = {
     grade: 'Grade',
     ms: 'ms',
     complete: 'Session Complete',
+    saving: 'Saving...',
+    saved: 'Saved!',
     clickBall: 'Click the ball when it turns gold',
     waitBlue: 'Wait for the ball to turn gold...',
     clickNow: 'CLICK NOW!',
@@ -44,6 +47,8 @@ const STR = {
     grade: '评级',
     ms: 'ms',
     complete: '训练完成',
+    saving: '保存中...',
+    saved: '已保存！',
     clickBall: '金球亮起时点击',
     waitBlue: '等待球体变金...',
     clickNow: '立即点击！',
@@ -57,6 +62,7 @@ const ROUNDS = 10;
 export default function ReactionSpeed({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReactionScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [phase, setPhase] = useState<string>('idle');
   const [round, setRound] = useState(0);
@@ -64,6 +70,8 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
   const [lastTime, setLastTime] = useState<number | null>(null);
   const [falseStarts, setFalseStarts] = useState(0);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -78,10 +86,13 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
     if (!containerRef.current) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setTimes([]);
     setLastTime(null);
     setFalseStarts(0);
     setRound(0);
+    startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
     sceneRef.current = new ReactionScene(containerRef.current, {
@@ -100,6 +111,43 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
       onRoundComplete: (_round, allTimes) => {
         setDone(true);
         const score = calculateScore([...allTimes, ...Array(falseStarts).fill(-1)]);
+        const avgTime =
+          allTimes.length > 0
+            ? Math.round(allTimes.reduce((a, b) => a + b, 0) / allTimes.length)
+            : 0;
+        const bestTime = allTimes.length > 0 ? Math.min(...allTimes) : 0;
+        const consistency = calculateConsistency(allTimes);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        // Save to Supabase if user is logged in
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 1,
+          version: 'universal',
+          totalScore: score,
+          groups: [
+            {
+              groupIndex: 1,
+              score,
+              subMetrics: {
+                avgTime,
+                bestTime,
+                consistency,
+                falseStarts,
+                roundsCompleted: allTimes.length,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(score);
       },
     });
@@ -164,6 +212,11 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -357,6 +410,16 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
           color: #FF4500;
           font-size: 2rem;
           font-family: Impact, sans-serif;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

@@ -8,6 +8,7 @@ import {
   calculateTrackingCapacity,
   type TrackingStats,
 } from '../../modules/d5-multi-track/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -30,6 +31,8 @@ const STR = {
     grade: 'Grade',
     trackingLevel: 'Tracking Level',
     capacity: 'Capacity',
+    saving: 'Saving...',
+    saved: 'Saved!',
     desc: 'Multiple enemies move simultaneously. Eliminate them one by one while tracking all positions!',
     exit: 'Exit',
   },
@@ -48,6 +51,8 @@ const STR = {
     grade: '评级',
     trackingLevel: '追踪等级',
     capacity: '追踪容量',
+    saving: '保存中...',
+    saved: '已保存！',
     desc: '多个敌人同时移动，逐一消灭同时追踪所有目标位置！',
     exit: '退出',
   },
@@ -56,6 +61,11 @@ const STR = {
 export default function MultiTargetTracking({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<MultiTrackScene | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const eliminatedRef = useRef<number>(0);
+  const escapesRef = useRef<number>(0);
+  const noEscapeWavesRef = useRef<number>(0);
+  const switchTimesRef = useRef<number[]>([]);
   const [started, setStarted] = useState(false);
   const [done, setDone] = useState(false);
   const [score, setScore] = useState(0);
@@ -65,6 +75,8 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
   const [switchTimes, setSwitchTimes] = useState<number[]>([]);
   const [noEscapeWaves, setNoEscapeWaves] = useState(0);
   const [activeTargets, setActiveTargets] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -88,6 +100,8 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
     if (!containerRef.current) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setScore(0);
     setEscapes(0);
     setDifficulty(1);
@@ -95,6 +109,11 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
     setSwitchTimes([]);
     setNoEscapeWaves(0);
     setActiveTargets(0);
+    startTimeRef.current = Date.now();
+    eliminatedRef.current = 0;
+    escapesRef.current = 0;
+    noEscapeWavesRef.current = 0;
+    switchTimesRef.current = [];
 
     sceneRef.current?.dispose();
     sceneRef.current = new MultiTrackScene(containerRef.current, {
@@ -102,16 +121,57 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
       onEliminate: (st) => {
         if (st > 0) {
           setSwitchTimes((prev) => [...prev, st]);
+          switchTimesRef.current = [...switchTimesRef.current, st];
         }
         setEliminated((e) => e + 1);
+        eliminatedRef.current += 1;
       },
-      onEscape: (esc) => setEscapes(esc),
+      onEscape: (esc) => {
+        setEscapes(esc);
+        escapesRef.current = esc;
+      },
       onDifficultyChange: (level) => setDifficulty(level),
       onGameOver: (finalScore) => {
         setDone(true);
+        const durationMs = Date.now() - startTimeRef.current;
+        const avgSw =
+          switchTimesRef.current.length > 0 ? calculateSwitchTime(switchTimesRef.current) : 0;
+        const cap = calculateTrackingCapacity(eliminatedRef.current, escapesRef.current);
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 5,
+          version: 'moba',
+          totalScore: finalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: finalScore,
+              subMetrics: {
+                eliminated: eliminatedRef.current,
+                avgSwitchTime: avgSw,
+                noEscapeWaves: noEscapeWavesRef.current,
+                escapes: escapesRef.current,
+                capacity: Math.round(cap * 10) / 10,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(finalScore);
       },
-      onNoEscapeWave: (waves) => setNoEscapeWaves(waves),
+      onNoEscapeWave: (waves) => {
+        setNoEscapeWaves(waves);
+        noEscapeWavesRef.current = waves;
+      },
       onActiveTargets: (count) => setActiveTargets(count),
     });
     sceneRef.current.start();
@@ -182,6 +242,11 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -362,6 +427,16 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
           font-weight: 600;
           font-size: 0.9rem;
           margin-bottom: 24px;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>

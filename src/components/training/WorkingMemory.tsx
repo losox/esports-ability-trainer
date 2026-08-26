@@ -10,6 +10,7 @@ import {
   type RoundResult,
   type DifficultyConfig,
 } from '../../modules/d6-memory/logic';
+import { saveTrainingSession } from '../../lib/training';
 
 interface Props {
   locale: 'en' | 'zh';
@@ -63,6 +64,8 @@ const STR = {
     px: 'px',
     yes: 'Yes',
     no: 'No',
+    saving: 'Saving...',
+    saved: 'Saved!',
   },
   zh: {
     title: 'D6 工作记忆',
@@ -108,12 +111,15 @@ const STR = {
     px: 'px',
     yes: '是',
     no: '否',
+    saving: '保存中...',
+    saved: '已保存！',
   },
 };
 
 export default function WorkingMemory({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<MemoryScene | null>(null);
+  const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [round, setRound] = useState(0);
@@ -123,6 +129,8 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
   const [difficulty, setDifficulty] = useState<DifficultyConfig | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const s = STR[locale];
 
@@ -137,6 +145,8 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
     if (!containerRef.current) return;
     setStarted(true);
     setDone(false);
+    setSaving(false);
+    setSaved(false);
     setRound(0);
     setFailures(0);
     setRoundResults([]);
@@ -144,6 +154,7 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
     setMarked(0);
     setTotalUnits(0);
     setDifficulty(null);
+    startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
     sceneRef.current = new MemoryScene(containerRef.current, {
@@ -165,6 +176,35 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
       onSessionComplete: (_rounds) => {
         setDone(true);
         const stats = calculateSessionStats(_rounds);
+        const durationMs = Date.now() - startTimeRef.current;
+
+        setSaving(true);
+        saveTrainingSession({
+          dimensionId: 6,
+          version: 'moba',
+          totalScore: stats.totalScore,
+          groups: [
+            {
+              groupIndex: 1,
+              score: stats.totalScore,
+              subMetrics: {
+                avgDeviation: stats.avgDeviation,
+                completeRecallRate: stats.completeRecallRate,
+                roundsCompleted: stats.roundsCompleted,
+                failures: stats.failures,
+              },
+            },
+          ],
+          durationMs,
+        })
+          .then(() => {
+            setSaving(false);
+            setSaved(true);
+          })
+          .catch(() => {
+            setSaving(false);
+          });
+
         onComplete?.(stats.totalScore);
       },
     });
@@ -296,6 +336,11 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
         <div className="training-overlay result-overlay">
           <div className="overlay-content">
             <h2 className="overlay-title">{s.complete}</h2>
+            {(saving || saved) && (
+              <div className={`save-status ${saved ? 'saved' : ''}`}>
+                {saving ? s.saving : s.saved}
+              </div>
+            )}
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">{s.score}</span>
@@ -571,6 +616,16 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
         .benchmark-detail {
           font-size: 0.85rem;
           color: #7A7A82;
+        }
+        .save-status {
+          font-size: 0.85rem;
+          color: #7A7A82;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .save-status.saved {
+          color: #4CAF50;
         }
       `}</style>
     </div>
