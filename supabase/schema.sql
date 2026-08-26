@@ -113,61 +113,89 @@ create index if not exists idx_plan_items_plan on public.plan_items(plan_id);
 
 -- profiles：用户只能 CRUD 自己的资料，但可以查看他人资料（用于比较）
 alter table public.profiles enable row level security;
+drop policy if exists "profiles_select_all" on public.profiles;
 create policy "profiles_select_all" on public.profiles for select using (true);
+drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own" on public.profiles for insert with check (auth.uid() = id);
+drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id);
+drop policy if exists "profiles_delete_own" on public.profiles;
 create policy "profiles_delete_own" on public.profiles for delete using (auth.uid() = id);
 
 -- sessions：用户可查看自己的；他人仅在对方 allow_comparison=true 时可查（用于比较）
 alter table public.sessions enable row level security;
+drop policy if exists "sessions_select_own" on public.sessions;
 create policy "sessions_select_own" on public.sessions for select using (auth.uid() = user_id);
+drop policy if exists "sessions_select_public" on public.sessions;
 create policy "sessions_select_public" on public.sessions for select using (
   exists (select 1 from public.profiles p where p.id = sessions.user_id and p.allow_comparison = true)
 );
+drop policy if exists "sessions_insert_own" on public.sessions;
 create policy "sessions_insert_own" on public.sessions for insert with check (auth.uid() = user_id);
+drop policy if exists "sessions_update_own" on public.sessions;
 create policy "sessions_update_own" on public.sessions for update using (auth.uid() = user_id);
+drop policy if exists "sessions_delete_own" on public.sessions;
 create policy "sessions_delete_own" on public.sessions for delete using (auth.uid() = user_id);
 
 -- scores：同 sessions — 自己可见，他人需对方 allow_comparison=true
 alter table public.scores enable row level security;
+drop policy if exists "scores_select_own" on public.scores;
 create policy "scores_select_own" on public.scores for select using (auth.uid() = user_id);
+drop policy if exists "scores_select_public" on public.scores;
 create policy "scores_select_public" on public.scores for select using (
   exists (select 1 from public.profiles p where p.id = scores.user_id and p.allow_comparison = true)
 );
+drop policy if exists "scores_insert_own" on public.scores;
 create policy "scores_insert_own" on public.scores for insert with check (auth.uid() = user_id);
+drop policy if exists "scores_update_own" on public.scores;
 create policy "scores_update_own" on public.scores for update using (auth.uid() = user_id);
+drop policy if exists "scores_delete_own" on public.scores;
 create policy "scores_delete_own" on public.scores for delete using (auth.uid() = user_id);
 
 -- achievements：用户只能 CRUD 自己的成就
 alter table public.achievements enable row level security;
+drop policy if exists "achievements_select_own" on public.achievements;
 create policy "achievements_select_own" on public.achievements for select using (auth.uid() = user_id);
+drop policy if exists "achievements_insert_own" on public.achievements;
 create policy "achievements_insert_own" on public.achievements for insert with check (auth.uid() = user_id);
+drop policy if exists "achievements_delete_own" on public.achievements;
 create policy "achievements_delete_own" on public.achievements for delete using (auth.uid() = user_id);
 
 -- follows：用户只能管理自己的关注列表，但可查他人关注关系
 alter table public.follows enable row level security;
+drop policy if exists "follows_select_all" on public.follows;
 create policy "follows_select_all" on public.follows for select using (true);
+drop policy if exists "follows_insert_own" on public.follows;
 create policy "follows_insert_own" on public.follows for insert with check (auth.uid() = follower_id);
+drop policy if exists "follows_delete_own" on public.follows;
 create policy "follows_delete_own" on public.follows for delete using (auth.uid() = follower_id);
 
 -- training_plans：用户只能 CRUD 自己的训练计划
 alter table public.training_plans enable row level security;
+drop policy if exists "plans_select_own" on public.training_plans;
 create policy "plans_select_own" on public.training_plans for select using (auth.uid() = user_id);
+drop policy if exists "plans_insert_own" on public.training_plans;
 create policy "plans_insert_own" on public.training_plans for insert with check (auth.uid() = user_id);
+drop policy if exists "plans_update_own" on public.training_plans;
 create policy "plans_update_own" on public.training_plans for update using (auth.uid() = user_id);
+drop policy if exists "plans_delete_own" on public.training_plans;
 create policy "plans_delete_own" on public.training_plans for delete using (auth.uid() = user_id);
 
 -- plan_items：通过 plan 关联，只能 CRUD 自己计划下的项
 alter table public.plan_items enable row level security;
+drop policy if exists "plan_items_select_own" on public.plan_items;
 create policy "plan_items_select_own" on public.plan_items for select using (
   exists (select 1 from public.training_plans p where p.id = plan_id and p.user_id = auth.uid())
 );
+drop policy if exists "plan_items_insert_own" on public.plan_items;
 create policy "plan_items_insert_own" on public.plan_items for insert with check (
   exists (select 1 from public.training_plans p where p.id = plan_id and p.user_id = auth.uid())
 );
+drop policy if exists "plan_items_update_own" on public.plan_items;
 create policy "plan_items_update_own" on public.plan_items for update using (
   exists (select 1 from public.training_plans p where p.id = plan_id and p.user_id = auth.uid())
 );
+drop policy if exists "plan_items_delete_own" on public.plan_items;
 create policy "plan_items_delete_own" on public.plan_items for delete using (
   exists (select 1 from public.training_plans p where p.id = plan_id and p.user_id = auth.uid())
 );
