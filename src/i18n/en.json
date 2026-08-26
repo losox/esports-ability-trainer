@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "login": "Log In",
+    "register": "Sign Up",
+    "languageSwitch": "中文"
+  },
+  "hero": {
+    "badge": "FREE · 8 DIMENSIONS · 3D",
+    "title": "Train Your Core Gaming Abilities",
+    "subtitle": "See Every Improvement",
+    "description": "A free training platform for FPS / MOBA players. 8 ability dimensions, Three.js 3D immersive environments, progressive difficulty, data-visualized progress curves.",
+    "statUsers": "Users Training",
+    "statImprovement": "Avg. Ability Gain",
+    "testBtn": "Test My Abilities",
+    "testBtnSub": "Free, no login required",
+    "trainBtn": "Start Systematic Training",
+    "trainBtnSub": "Quick sign-up, visual training & growth dashboard"
+  },
+  "games": {
+    "title": "Games That Benefit From Training",
+    "fpsTag": "FPS",
+    "mobaTag": "MOBA",
+    "valorant": "Valorant",
+    "cs2": "CS2",
+    "apex": "Apex Legends",
+    "ow2": "Overwatch 2",
+    "pubg": "PUBG",
+    "r6": "Rainbow Six",
+    "lol": "League of Legends",
+    "dota2": "Dota 2",
+    "honor": "Honor of Kings",
+    "wildrift": "Wild Rift"
+  },
+  "dimensions": {
+    "title": "8 Core Ability Dimensions",
+    "subtitle": "Train the fundamentals behind every game",
+    "d1": { "name": "Reaction Speed", "type": "Universal", "desc": "Pure neural response time" },
+    "d2": { "name": "Aiming Precision", "type": "FPS", "desc": "Target accuracy & headshots" },
+    "d3": { "name": "Target Tracking", "type": "FPS", "desc": "Following moving targets" },
+    "d4": { "name": "Peripheral Vision", "type": "FPS+MOBA", "desc": "Catch edge-of-screen info" },
+    "d5": { "name": "Multi-Target Tracking", "type": "MOBA", "desc": "Track multiple objects" },
+    "d6": { "name": "Working Memory", "type": "MOBA", "desc": "Hold & update dynamic info" },
+    "d7": { "name": "Cognitive Flexibility", "type": "Universal", "desc": "Switch modes fast" },
+    "d8": { "name": "Decision Speed", "type": "FPS+MOBA", "desc": "Choose fast under pressure" }
+  },
+  "growth": {
+    "title": "Visualize Your Growth",
+    "subtitle": "Every session is tracked, every gain is visible",
+    "progressLabel": "Progress Curve",
+    "progressDesc": "Track your improvement over time",
+    "achievementsLabel": "Achievements",
+    "achievementsDesc": "Unlock badges as you grow",
+    "radarLabel": "Ability Radar",
+    "radarDesc": "See your full profile at a glance"
+  },
+  "features": {
+    "title": "Built for Real Progress",
+    "planTitle": "Training Plans",
+    "planDesc": "Customize daily drills, check off completed sets, build streaks",
+    "feedbackTitle": "Real-time Feedback",
+    "feedbackDesc": "Compare each set with your best, get coaching tips between rounds",
+    "socialTitle": "Friend Comparison",
+    "socialDesc": "Follow others, compare progress, no public leaderboards"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "home": "首页",
+    "about": "关于",
+    "login": "登录",
+    "register": "注册",
+    "languageSwitch": "EN"
+  },
+  "hero": {
+    "badge": "免费 · 8大维度 · 3D",
+    "title": "训练你的竞技游戏底层能力",
+    "subtitle": "看见每一次进步",
+    "description": "面向 FPS / MOBA 玩家的免费训练平台。8个能力维度，Three.js 3D沉浸环境，渐进式难度，数据可视化进步曲线。",
+    "statUsers": "名用户正在训练",
+    "statImprovement": "平均能力提升",
+    "testBtn": "免费测试我的能力",
+    "testBtnSub": "免登录，直接开始",
+    "trainBtn": "开始系统练习",
+    "trainBtnSub": "极速注册，可视化训练与能力增长面板"
+  },
+  "games": {
+    "title": "训练对这些游戏有帮助",
+    "fpsTag": "FPS",
+    "mobaTag": "MOBA",
+    "valorant": "Valorant",
+    "cs2": "CS2",
+    "apex": "Apex Legends",
+    "ow2": "守望先锋2",
+    "pubg": "PUBG",
+    "r6": "彩虹六号",
+    "lol": "英雄联盟",
+    "dota2": "Dota 2",
+    "honor": "王者荣耀",
+    "wildrift": "Wild Rift"
+  },
+  "dimensions": {
+    "title": "8大核心能力维度",
+    "subtitle": "训练每个游戏背后的底层能力",
+    "d1": { "name": "反应速度", "type": "通用", "desc": "纯神经传导反应时间" },
+    "d2": { "name": "瞄准精度", "type": "FPS", "desc": "目标定位与爆头训练" },
+    "d3": { "name": "目标追踪", "type": "FPS", "desc": "跟随移动目标保持锁定" },
+    "d4": { "name": "外周视野", "type": "FPS+MOBA", "desc": "余光捕捉屏幕边缘信息" },
+    "d5": { "name": "多目标追踪", "type": "MOBA", "desc": "同时追踪多个移动对象" },
+    "d6": { "name": "工作记忆", "type": "MOBA", "desc": "记忆并更新动态信息" },
+    "d7": { "name": "认知灵活性", "type": "通用", "desc": "快速切换行为模式" },
+    "d8": { "name": "决策速度", "type": "FPS+MOBA", "desc": "压力下快速做出选择" }
+  },
+  "growth": {
+    "title": "可视化你的成长",
+    "subtitle": "每次训练都有记录，每一点进步都看得见",
+    "progressLabel": "进步曲线",
+    "progressDesc": "追踪你随时间的能力变化",
+    "achievementsLabel": "成就徽章",
+    "achievementsDesc": "随着能力提升解锁徽章",
+    "radarLabel": "能力雷达图",
+    "radarDesc": "一眼看清你的能力全貌"
+  },
+  "features": {
+    "title": "为真实进步而生",
+    "planTitle": "训练计划",
+    "planDesc": "自定义每日训练项，打勾完成，连续打卡",
+    "feedbackTitle": "实时反馈",
+    "feedbackDesc": "每组与个人最佳对标，组间教练提示",
+    "socialTitle": "好友比较",
+    "socialDesc": "单向关注，比较进度，无公开排行榜"
+  },
+  "footer": {
+    "rights": "保留所有权利。",
+    "privacy": "隐私政策",
+    "terms": "用户协议"
+  }
+}

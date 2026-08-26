@@ -1,0 +1,201 @@
+---
+import { getTranslations, getLocalePath, getAlternateLocale, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+}
+
+const { locale, title, description = '' } = Astro.props;
+const t = getTranslations(locale);
+const altLocale = getAlternateLocale(locale);
+const altPath = altLocale === 'en' ? '/' : '/zh/';
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" hreflang={locale} href={getLocalePath(locale)} />
+    <link rel="alternate" hreflang={altLocale} href={altPath} />
+    <link rel="alternate" hreflang="x-default" href="/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+  </head>
+  <body>
+    <nav class="nav-bar">
+      <div class="nav-container">
+        <a href={getLocalePath(locale)} class="logo">FORGE<span>GAMING</span></a>
+        <div class="nav-links">
+          <a href={getLocalePath(locale)} class="nav-link">{t.nav.home}</a>
+          <a href={`${getLocalePath(locale)}/about`} class="nav-link">{t.nav.about}</a>
+          <a href={`${getLocalePath(locale)}/login`} class="nav-link nav-link-login">{t.nav.login}</a>
+          <a href={`${getLocalePath(locale)}/register`} class="nav-link nav-link-register">{t.nav.register}</a>
+          <a href={altPath} class="lang-switch">{t.nav.languageSwitch}</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-left">
+          <span class="logo logo-sm">FORGE<span>GAMING</span></span>
+          <span class="footer-copy">&copy; 2026 ForgeGaming. {t.footer.rights}</span>
+        </div>
+        <div class="footer-right">
+          <a href={`${getLocalePath(locale)}/privacy`} class="footer-link">{t.footer.privacy}</a>
+          <a href={`${getLocalePath(locale)}/terms`} class="footer-link">{t.footer.terms}</a>
+        </div>
+      </div>
+    </footer>
+
+    <style is:global>
+      :root {
+        --bg: #161618;
+        --bg-card: rgba(30, 30, 34, 0.9);
+        --bg-card-solid: #1e1e22;
+        --accent: #FF4500;
+        --accent-dim: rgba(255, 69, 0, 0.15);
+        --gold: #FFD700;
+        --gold-dim: rgba(255, 215, 0, 0.15);
+        --text: #E8E8E8;
+        --text-dim: #7A7A82;
+        --border: rgba(255, 69, 0, 0.2);
+        --border-soft: rgba(255, 255, 255, 0.06);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .logo {
+        font-family: Impact, 'Oswald', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        color: var(--text);
+      }
+      .logo span {
+        color: var(--accent);
+      }
+      .logo-sm {
+        font-size: 1rem;
+      }
+
+      .nav-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(22, 22, 24, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .nav-link {
+        font-size: 0.9rem;
+        color: var(--text-dim);
+        transition: color 0.2s;
+      }
+      .nav-link:hover {
+        color: var(--text);
+      }
+      .nav-link-login {
+        color: var(--accent);
+      }
+      .nav-link-register {
+        background: var(--accent);
+        color: #fff;
+        padding: 6px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+      .lang-switch {
+        font-size: 0.85rem;
+        color: var(--gold);
+        padding: 4px 10px;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 3px;
+        transition: all 0.2s;
+      }
+      .lang-switch:hover {
+        background: var(--gold-dim);
+      }
+
+      .footer {
+        border-top: 1px solid var(--border-soft);
+        padding: 24px;
+        margin-top: 60px;
+      }
+      .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .footer-copy {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
+      .footer-right {
+        display: flex;
+        gap: 20px;
+      }
+      .footer-link {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        transition: color 0.2s;
+      }
+      .footer-link:hover {
+        color: var(--text);
+      }
+    </style>
+  </body>
+</html>

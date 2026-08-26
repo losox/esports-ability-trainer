@@ -1,0 +1,240 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getTranslations, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+
+const dimensions = [
+  { id: 1, key: 'd1', icon: '⚡' },
+  { id: 2, key: 'd2', icon: '🎯' },
+  { id: 3, key: 'd3', icon: '📡' },
+  { id: 4, key: 'd4', icon: '👁' },
+  { id: 5, key: 'd5', icon: '🔵' },
+  { id: 6, key: 'd6', icon: '🧠' },
+  { id: 7, key: 'd7', icon: '🔀' },
+  { id: 8, key: 'd8', icon: '⚔️' },
+];
+
+const games = [
+  { name: t.games.valorant, type: 'FPS' },
+  { name: t.games.cs2, type: 'FPS' },
+  { name: t.games.apex, type: 'FPS' },
+  { name: t.games.ow2, type: 'FPS' },
+  { name: t.games.pubg, type: 'FPS' },
+  { name: t.games.r6, type: 'FPS' },
+  { name: t.games.lol, type: 'MOBA' },
+  { name: t.games.dota2, type: 'MOBA' },
+  { name: t.games.honor, type: 'MOBA' },
+  { name: t.games.wildrift, type: 'MOBA' },
+];
+---
+
+<BaseLayout locale={locale} title="ForgeGaming — Train Your Core Gaming Abilities" description="Free FPS/MOBA ability training platform. 8 dimensions, 3D immersive environments, progressive difficulty, visualized progress.">
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-bg-left"></div>
+      <div class="hero-bg-right"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">★ {t.hero.badge} ★</div>
+      <h1 class="hero-title">{t.hero.title}<br /><span class="hero-subtitle">{t.hero.subtitle}</span></h1>
+      <p class="hero-desc">{t.hero.description}</p>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-num">8,441</span>
+          <span class="stat-label">{t.hero.statUsers}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">23%</span>
+          <span class="stat-label">{t.hero.statImprovement}</span>
+        </div>
+      </div>
+      <div class="hero-buttons">
+        <a href={`/${locale === 'en' ? '' : 'zh/'}test`} class="btn btn-primary">
+          <span>{t.hero.testBtn} ▶</span>
+          <small>{t.hero.testBtnSub}</small>
+        </a>
+        <a href={`/${locale === 'en' ? '' : 'zh/'}register`} class="btn btn-secondary">
+          <span>{t.hero.trainBtn} →</span>
+          <small>{t.hero.trainBtnSub}</small>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="games-section">
+    <div class="container">
+      <h2 class="section-title">{t.games.title}</h2>
+      <div class="games-grid">
+        {games.map((game) => (
+          <div class={`game-tag ${game.type.toLowerCase()}`}>
+            <span class="game-type">{game.type === 'FPS' ? t.games.fpsTag : t.games.mobaTag}</span>
+            <span class="game-name">{game.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="dimensions-section">
+    <div class="container">
+      <h2 class="section-title">{t.dimensions.title}</h2>
+      <p class="section-subtitle">{t.dimensions.subtitle}</p>
+      <div class="dimensions-grid">
+        {dimensions.map((d) => (
+          <div class="dim-card">
+            <div class="dim-icon">{d.icon}</div>
+            <div class="dim-number">D{d.id}</div>
+            <div class="dim-name">{t.dimensions[d.key].name}</div>
+            <div class="dim-type">{t.dimensions[d.key].type}</div>
+            <div class="dim-desc">{t.dimensions[d.key].desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="growth-section">
+    <div class="container">
+      <h2 class="section-title">{t.growth.title}</h2>
+      <p class="section-subtitle">{t.growth.subtitle}</p>
+      <div class="growth-grid">
+        <div class="growth-card">
+          <div class="growth-mockup">
+            <svg viewBox="0 0 200 100" class="mockup-svg">
+              <polyline points="10,80 40,70 70,60 100,45 130,40 160,28 190,20" fill="none" stroke="#FF4500" stroke-width="2" />
+              <polyline points="10,80 40,70 70,60 100,45 130,40 160,28 190,20" fill="none" stroke="rgba(255,69,0,0.2)" stroke-width="6" />
+              <circle cx="190" cy="20" r="3" fill="#FFD700" />
+            </svg>
+          </div>
+          <div class="growth-label">{t.growth.progressLabel}</div>
+          <div class="growth-desc">{t.growth.progressDesc}</div>
+        </div>
+        <div class="growth-card">
+          <div class="growth-mockup badges-mockup">
+            <div class="mock-badge earned">⚡</div>
+            <div class="mock-badge earned">🎯</div>
+            <div class="mock-badge earned">🔥</div>
+            <div class="mock-badge">📊</div>
+            <div class="mock-badge">🏆</div>
+            <div class="mock-badge">💎</div>
+          </div>
+          <div class="growth-label">{t.growth.achievementsLabel}</div>
+          <div class="growth-desc">{t.growth.achievementsDesc}</div>
+        </div>
+        <div class="growth-card">
+          <div class="growth-mockup">
+            <svg viewBox="0 0 200 200" class="mockup-svg">
+              <polygon points="100,20 170,60 150,150 50,150 30,60" fill="none" stroke="rgba(255,69,0,0.2)" stroke-width="1" />
+              <polygon points="100,20 170,60 150,150 50,150 30,60" fill="none" stroke="rgba(255,69,0,0.1)" stroke-width="1" transform="scale(0.7) translate(43,43)" />
+              <polygon points="100,40 150,65 140,130 60,130 50,65" fill="rgba(255,69,0,0.15)" stroke="#FF4500" stroke-width="2" />
+              <circle cx="100" cy="40" r="3" fill="#FFD700" />
+              <circle cx="150" cy="65" r="3" fill="#FFD700" />
+              <circle cx="140" cy="130" r="3" fill="#FFD700" />
+              <circle cx="60" cy="130" r="3" fill="#FFD700" />
+              <circle cx="50" cy="65" r="3" fill="#FFD700" />
+            </svg>
+          </div>
+          <div class="growth-label">{t.growth.radarLabel}</div>
+          <div class="growth-desc">{t.growth.radarDesc}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-section">
+    <div class="container">
+      <h2 class="section-title">{t.features.title}</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>{t.features.planTitle}</h3>
+          <p>{t.features.planDesc}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>{t.features.feedbackTitle}</h3>
+          <p>{t.features.feedbackDesc}</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>{t.features.socialTitle}</h3>
+          <p>{t.features.socialDesc}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .section-title { font-family: Impact, 'Oswald', sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); margin-bottom: 8px; text-align: center; }
+  .section-subtitle { text-align: center; color: var(--text-dim); margin-bottom: 32px; font-size: 0.95rem; }
+  .hero { position: relative; min-height: 600px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 80px 24px 60px; }
+  .hero-bg { position: absolute; inset: 0; z-index: 0; }
+  .hero-bg-left { position: absolute; left: 0; top: 0; width: 50%; height: 100%; background: url('/hero-fps-bg.jpg') center top / cover; opacity: 0.35; mask-image: linear-gradient(to right, #000 60%, transparent 100%); -webkit-mask-image: linear-gradient(to right, #000 60%, transparent 100%); }
+  .hero-bg-right { position: absolute; right: 0; top: 0; width: 50%; height: 100%; background: url('/hero-moba-bg.jpg') center top / cover; opacity: 0.35; mask-image: linear-gradient(to left, #000 60%, transparent 100%); -webkit-mask-image: linear-gradient(to left, #000 60%, transparent 100%); }
+  .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(22,22,24,0.3) 0%, transparent 25%, transparent 40%, rgba(22,22,24,0.4) 60%, rgba(22,22,24,0.75) 80%, rgba(22,22,24,1) 100%); }
+  .hero-content { position: relative; z-index: 1; text-align: center; max-width: 700px; }
+  .hero-badge { display: inline-block; padding: 6px 16px; border: 1px solid rgba(255,215,0,0.15); border-radius: 3px; color: var(--gold); font-size: 0.75rem; letter-spacing: 0.15em; font-weight: 700; margin-bottom: 20px; }
+  .hero-title { font-family: Impact, 'Oswald', sans-serif; font-size: 3.2rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 16px; }
+  .hero-subtitle { color: var(--accent); }
+  .hero-desc { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 28px; max-width: 580px; margin-left: auto; margin-right: auto; }
+  .hero-stats { display: flex; justify-content: center; gap: 48px; margin-bottom: 32px; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-num { font-family: Impact, sans-serif; font-size: 2.2rem; color: var(--gold); line-height: 1; }
+  .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+  .hero-buttons { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .btn { display: flex; flex-direction: column; align-items: center; padding: 14px 32px; border-radius: 4px; font-weight: 700; transition: all 0.2s; min-width: 220px; }
+  .btn span { font-size: 1rem; }
+  .btn small { font-size: 0.72rem; font-weight: 400; opacity: 0.8; margin-top: 4px; }
+  .btn-primary { background: var(--accent); color: #fff; border: 2px solid var(--accent); }
+  .btn-primary:hover { box-shadow: 0 0 20px rgba(255,69,0,0.4); transform: translateY(-2px); }
+  .btn-secondary { background: transparent; color: var(--gold); border: 2px solid var(--gold); }
+  .btn-secondary:hover { background: rgba(255,215,0,0.15); box-shadow: 0 0 20px rgba(255,215,0,0.2); transform: translateY(-2px); }
+  .games-section { padding: 60px 0; }
+  .games-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 800px; margin: 0 auto; }
+  .game-tag { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border-soft); border-radius: 4px; background: var(--bg-card-solid); font-size: 0.85rem; transition: all 0.2s; }
+  .game-tag:hover { border-color: var(--border); }
+  .game-tag.fps:hover { border-color: var(--accent); }
+  .game-tag.moba:hover { border-color: var(--gold); }
+  .game-type { font-size: 0.65rem; padding: 2px 6px; border-radius: 2px; font-weight: 700; letter-spacing: 0.05em; }
+  .fps .game-type { background: rgba(255,69,0,0.15); color: var(--accent); }
+  .moba .game-type { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .dimensions-section { padding: 60px 0; background: rgba(255,255,255,0.015); }
+  .dimensions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .dim-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 6px; padding: 20px; text-align: center; transition: all 0.2s; }
+  .dim-card:hover { border-color: var(--border); transform: translateY(-3px); }
+  .dim-icon { font-size: 2rem; margin-bottom: 8px; }
+  .dim-number { font-family: Impact, sans-serif; font-size: 0.7rem; color: var(--accent); letter-spacing: 0.1em; }
+  .dim-name { font-weight: 700; font-size: 0.95rem; margin: 4px 0; }
+  .dim-type { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 8px; }
+  .dim-desc { font-size: 0.78rem; color: var(--text-dim); }
+  .growth-section { padding: 60px 0; }
+  .growth-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .growth-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 6px; padding: 24px; text-align: center; transition: all 0.2s; }
+  .growth-card:hover { border-color: var(--border); }
+  .growth-mockup { height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .mockup-svg { width: 100%; height: 100%; }
+  .badges-mockup { gap: 8px; }
+  .mock-badge { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-soft); font-size: 1rem; opacity: 0.3; }
+  .mock-badge.earned { opacity: 1; border-color: rgba(255,215,0,0.15); background: rgba(255,215,0,0.15); }
+  .growth-label { font-weight: 700; margin-bottom: 4px; }
+  .growth-desc { font-size: 0.8rem; color: var(--text-dim); }
+  .features-section { padding: 60px 0; background: rgba(255,255,255,0.015); }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 6px; padding: 28px; transition: all 0.2s; }
+  .feature-card:hover { border-color: var(--border); }
+  .feature-icon { font-size: 2rem; margin-bottom: 12px; }
+  .feature-card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .feature-card p { font-size: 0.85rem; color: var(--text-dim); }
+  @media (max-width: 900px) {
+    .dimensions-grid { grid-template-columns: repeat(2, 1fr); }
+    .growth-grid, .features-grid { grid-template-columns: 1fr; }
+  }
+</style>
