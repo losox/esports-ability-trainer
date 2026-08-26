@@ -118,16 +118,22 @@ create policy "profiles_insert_own" on public.profiles for insert with check (au
 create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id);
 create policy "profiles_delete_own" on public.profiles for delete using (auth.uid() = id);
 
--- sessions：用户只能 CRUD 自己的训练会话，但他人可查（用于比较）
+-- sessions：用户可查看自己的；他人仅在对方 allow_comparison=true 时可查（用于比较）
 alter table public.sessions enable row level security;
-create policy "sessions_select_all" on public.sessions for select using (true);
+create policy "sessions_select_own" on public.sessions for select using (auth.uid() = user_id);
+create policy "sessions_select_public" on public.sessions for select using (
+  exists (select 1 from public.profiles p where p.id = sessions.user_id and p.allow_comparison = true)
+);
 create policy "sessions_insert_own" on public.sessions for insert with check (auth.uid() = user_id);
 create policy "sessions_update_own" on public.sessions for update using (auth.uid() = user_id);
 create policy "sessions_delete_own" on public.sessions for delete using (auth.uid() = user_id);
 
--- scores：同 sessions
+-- scores：同 sessions — 自己可见，他人需对方 allow_comparison=true
 alter table public.scores enable row level security;
-create policy "scores_select_all" on public.scores for select using (true);
+create policy "scores_select_own" on public.scores for select using (auth.uid() = user_id);
+create policy "scores_select_public" on public.scores for select using (
+  exists (select 1 from public.profiles p where p.id = scores.user_id and p.allow_comparison = true)
+);
 create policy "scores_insert_own" on public.scores for insert with check (auth.uid() = user_id);
 create policy "scores_update_own" on public.scores for update using (auth.uid() = user_id);
 create policy "scores_delete_own" on public.scores for delete using (auth.uid() = user_id);
