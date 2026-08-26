@@ -13,6 +13,8 @@ const browserGlobals = {
   HTMLElement: 'readonly',
   HTMLDivElement: 'readonly',
   HTMLInputElement: 'readonly',
+  HTMLCanvasElement: 'readonly',
+  CanvasRenderingContext2D: 'readonly',
   MouseEvent: 'readonly',
   KeyboardEvent: 'readonly',
   Event: 'readonly',
@@ -29,6 +31,8 @@ const browserGlobals = {
   navigator: 'readonly',
   location: 'readonly',
   React: 'readonly',
+  AudioContext: 'readonly',
+  OscillatorType: 'readonly',
 };
 
 const nodeGlobals = {

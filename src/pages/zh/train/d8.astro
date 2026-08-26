@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DecisionSpeed from '../../../components/training/DecisionSpeed.tsx';
+import type { Locale } from '../../../i18n/ui';
+
+const locale: Locale = 'zh';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D8 决策速度训练 — ForgeGaming"
+  description="3D沉浸式多目标资源分配决策速度训练"
+>
+  <DecisionSpeed client:only="react" locale={locale} />
+</BaseLayout>

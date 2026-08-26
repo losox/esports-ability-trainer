@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import TargetTracking from '../../../components/training/TargetTracking.tsx';
+import type { Locale } from '../../../i18n/ui';
+
+const locale: Locale = 'zh';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D3 目标追踪训练 — ForgeGaming"
+  description="3D沉浸式FPS靶场移动人形靶目标追踪训练"
+>
+  <TargetTracking client:only="react" locale={locale} />
+</BaseLayout>

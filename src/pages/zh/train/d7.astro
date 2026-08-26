@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CognitiveFlexibility from '../../../components/training/CognitiveFlexibility.tsx';
+import type { Locale } from '../../../i18n/ui';
+
+const locale: Locale = 'zh';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D7 认知灵活性训练 — ForgeGaming"
+  description="3D沉浸式魔法棋盘认知灵活性训练"
+>
+  <CognitiveFlexibility client:only="react" locale={locale} />
+</BaseLayout>

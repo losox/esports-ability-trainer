@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AimingPrecision from '../../../components/training/AimingPrecision.tsx';
+import type { Locale } from '../../../i18n/ui';
+
+const locale: Locale = 'zh';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D2 瞄准精度训练 — ForgeGaming"
+  description="3D沉浸式FPS靶场人形靶瞄准精度训练"
+>
+  <AimingPrecision client:only="react" locale={locale} />
+</BaseLayout>

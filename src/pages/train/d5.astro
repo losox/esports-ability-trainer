@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MultiTargetTracking from '../../components/training/MultiTargetTracking.tsx';
+import type { Locale } from '../../i18n/ui';
+
+const locale: Locale = 'en';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D5 Multi-Target Tracking Training — ForgeGaming"
+  description="Train your multi-target tracking ability with simultaneous moving enemies"
+>
+  <MultiTargetTracking client:only="react" locale={locale} />
+</BaseLayout>

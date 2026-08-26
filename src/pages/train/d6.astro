@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkingMemory from '../../components/training/WorkingMemory.tsx';
+import type { Locale } from '../../i18n/ui';
+
+const locale: Locale = 'en';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D6 Working Memory Training — ForgeGaming"
+  description="Train your working memory with 3D MOBA map recall exercises"
+>
+  <WorkingMemory client:only="react" locale={locale} />
+</BaseLayout>
