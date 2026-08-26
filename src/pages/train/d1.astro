@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReactionSpeed from '../../components/training/ReactionSpeed.tsx';
+import type { Locale } from '../../i18n/ui';
+
+const locale: Locale = 'en';
+---
+
+<BaseLayout
+  locale={locale}
+  title="D1 Reaction Speed Training — ForgeGaming"
+  description="Train your reaction speed with 3D immersive magic ball"
+>
+  <ReactionSpeed client:only="react" locale={locale} />
+</BaseLayout>

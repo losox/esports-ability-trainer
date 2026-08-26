@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Dashboard from '../../components/dashboard/Dashboard.tsx';
+import { getTranslations, getLocalePath, type Locale } from '../../i18n/ui';
+
+const locale: Locale = 'zh';
+const t = getTranslations(locale);
+
+const dimensions = [
+  {
+    id: 1,
+    key: 'd1',
+    icon: '⚡',
+    name: t.dimensions.d1.name,
+    type: t.dimensions.d1.type,
+    desc: t.dimensions.d1.desc,
+  },
+  {
+    id: 2,
+    key: 'd2',
+    icon: '🎯',
+    name: t.dimensions.d2.name,
+    type: t.dimensions.d2.type,
+    desc: t.dimensions.d2.desc,
+  },
+  {
+    id: 3,
+    key: 'd3',
+    icon: '📡',
+    name: t.dimensions.d3.name,
+    type: t.dimensions.d3.type,
+    desc: t.dimensions.d3.desc,
+  },
+  {
+    id: 4,
+    key: 'd4',
+    icon: '👁',
+    name: t.dimensions.d4.name,
+    type: t.dimensions.d4.type,
+    desc: t.dimensions.d4.desc,
+  },
+  {
+    id: 5,
+    key: 'd5',
+    icon: '🔵',
+    name: t.dimensions.d5.name,
+    type: t.dimensions.d5.type,
+    desc: t.dimensions.d5.desc,
+  },
+  {
+    id: 6,
+    key: 'd6',
+    icon: '🧠',
+    name: t.dimensions.d6.name,
+    type: t.dimensions.d6.type,
+    desc: t.dimensions.d6.desc,
+  },
+  {
+    id: 7,
+    key: 'd7',
+    icon: '🔀',
+    name: t.dimensions.d7.name,
+    type: t.dimensions.d7.type,
+    desc: t.dimensions.d7.desc,
+  },
+  {
+    id: 8,
+    key: 'd8',
+    icon: '⚔️',
+    name: t.dimensions.d8.name,
+    type: t.dimensions.d8.type,
+    desc: t.dimensions.d8.desc,
+  },
+];
+---
+
+<BaseLayout locale={locale} title="训练中心 — ForgeGaming" description="你的训练指挥中心">
+  <Dashboard
+    client:load
+    locale={locale}
+    translations={t.dashboard}
+    dimensions={dimensions}
+    loginPath={getLocalePath(locale, '/login')}
+    testPath={getLocalePath(locale, '/test')}
+    basePath={getLocalePath(locale)}
+  />
+</BaseLayout>

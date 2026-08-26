@@ -4,9 +4,50 @@ import tsparser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import astro from 'eslint-plugin-astro';
+import astroParser from 'astro-eslint-parser';
+
+const browserGlobals = {
+  window: 'readonly',
+  document: 'readonly',
+  console: 'readonly',
+  HTMLElement: 'readonly',
+  HTMLDivElement: 'readonly',
+  HTMLInputElement: 'readonly',
+  MouseEvent: 'readonly',
+  KeyboardEvent: 'readonly',
+  Event: 'readonly',
+  FormData: 'readonly',
+  ResizeObserver: 'readonly',
+  requestAnimationFrame: 'readonly',
+  cancelAnimationFrame: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  setInterval: 'readonly',
+  clearInterval: 'readonly',
+  performance: 'readonly',
+  localStorage: 'readonly',
+  navigator: 'readonly',
+  location: 'readonly',
+  React: 'readonly',
+};
+
+const nodeGlobals = {
+  URL: 'readonly',
+  process: 'readonly',
+  Buffer: 'readonly',
+  __dirname: 'readonly',
+  __filename: 'readonly',
+  module: 'readonly',
+  require: 'readonly',
+  exports: 'readonly',
+  global: 'readonly',
+};
 
 export default [
-  js.configs.recommended,
+  {
+    ...js.configs.recommended,
+    ignores: ['**/*.astro', 'dist/', 'node_modules/', '.astro/', 'design/'],
+  },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -16,6 +57,7 @@ export default [
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
       },
+      globals: browserGlobals,
     },
     plugins: {
       '@typescript-eslint': tseslint,
@@ -37,6 +79,13 @@ export default [
   },
   {
     files: ['**/*.astro'],
+    languageOptions: {
+      parser: astroParser,
+      parserOptions: {
+        parser: tsparser,
+        extraFileExtensions: ['.astro'],
+      },
+    },
     plugins: { astro },
     rules: {
       ...astro.configs.recommended.rules,
@@ -45,17 +94,22 @@ export default [
   {
     files: ['*.config.ts', '*.config.mjs', '*.config.js', 'scripts/**/*.mjs'],
     languageOptions: {
+      globals: { ...nodeGlobals, console: 'readonly' },
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx'],
+    languageOptions: {
       globals: {
-        URL: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
-        global: 'readonly',
+        ...browserGlobals,
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
       },
     },
   },
