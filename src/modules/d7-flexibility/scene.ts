@@ -296,7 +296,7 @@ export class FlexibilityScene extends SceneBase {
 
   private setupInteraction(): void {
     const canvas = this.renderer.domElement;
-    canvas.addEventListener('click', this.handleClick);
+    canvas.addEventListener('mousedown', this.handleClick);
     document.addEventListener('keydown', this.handleKeyDown);
   }
 

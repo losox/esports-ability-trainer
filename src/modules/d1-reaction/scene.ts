@@ -1,16 +1,16 @@
 import * as THREE from 'three';
 import { SceneBase } from '../shared/scene-base';
-import { generateWaitTime } from './logic';
+import { generateWaitTime, REQUIRED_SUCCESS_COUNT } from './logic';
 
 type BallState = 'waiting' | 'activated' | 'dissolving' | 'resetting';
 
 interface ReactionSceneCallbacks {
   onStateChange?: (state: BallState) => void;
   onReaction?: (timeMs: number, isFalseStart: boolean) => void;
-  onRoundComplete?: (round: number, times: number[]) => void;
+  onSuccessUpdate?: (successCount: number, required: number) => void;
+  onRoundComplete?: (successCount: number, times: number[], falseStarts: number) => void;
 }
 
-const ROUNDS_PER_SESSION = 10;
 const BALL_RADIUS = 0.6;
 const COLORS = {
   waiting: 0x4488ff,
@@ -27,7 +27,6 @@ export class ReactionScene extends SceneBase {
   private pedestal!: THREE.Mesh;
   private state: BallState = 'waiting';
   private activationTime = 0;
-  private round = 0;
   private reactionTimes: number[] = [];
   private falseStarts = 0;
   private callbacks: ReactionSceneCallbacks;
@@ -46,7 +45,8 @@ export class ReactionScene extends SceneBase {
     this.createPedestal();
     this.createBall();
     this.setupClickHandler();
-    this.startRound();
+    this.callbacks.onSuccessUpdate?.(0, REQUIRED_SUCCESS_COUNT);
+    this.startTrial();
   }
 
   private createEnvironment(): void {
@@ -127,7 +127,7 @@ export class ReactionScene extends SceneBase {
 
   private setupClickHandler(): void {
     const canvas = this.renderer.domElement;
-    canvas.addEventListener('click', this.handleClick);
+    canvas.addEventListener('mousedown', this.handleClick);
   }
 
   private handleClick = (event: MouseEvent): void => {
@@ -145,6 +145,7 @@ export class ReactionScene extends SceneBase {
     const now = performance.now();
 
     if (this.state === 'waiting') {
+      // 抢跑：不计入进度，立刻重开本轮
       this.falseStarts++;
       this.callbacks.onReaction?.(-1, true);
       this.setState('dissolving');
@@ -155,14 +156,18 @@ export class ReactionScene extends SceneBase {
       const reactionTime = now - this.activationTime;
       this.reactionTimes.push(reactionTime);
       this.callbacks.onReaction?.(reactionTime, false);
+      this.callbacks.onSuccessUpdate?.(this.reactionTimes.length, REQUIRED_SUCCESS_COUNT);
       this.setState('dissolving');
     }
   };
 
-  private startRound(): void {
-    this.round++;
-    if (this.round > ROUNDS_PER_SESSION) {
-      this.callbacks.onRoundComplete?.(this.round - 1, this.reactionTimes);
+  /**
+   * 开始一次「尝试」：抢跑不计为消耗，会立即再次 startTrial；成功才推进进度。
+   */
+  private startTrial(): void {
+    const successes = this.reactionTimes.length;
+    if (successes >= REQUIRED_SUCCESS_COUNT) {
+      this.callbacks.onRoundComplete?.(successes, this.reactionTimes, this.falseStarts);
       return;
     }
 
@@ -196,6 +201,7 @@ export class ReactionScene extends SceneBase {
     }
 
     if (this.state === 'dissolving') {
+      if (this.dissolveStart === 0) this.dissolveStart = performance.now();
       const elapsed = performance.now() - this.dissolveStart;
       const progress = Math.min(elapsed / 500, 1);
       this.ball.scale.setScalar(1 + progress * 0.5);
@@ -207,9 +213,12 @@ export class ReactionScene extends SceneBase {
         this.ball.visible = false;
         this.ballMaterial.transparent = false;
         this.ballMaterial.opacity = 1;
+        this.dissolveStart = 0;
         this.setState('resetting');
-        setTimeout(() => this.startRound(), 300);
+        setTimeout(() => this.startTrial(), 300);
       }
+    } else {
+      this.dissolveStart = 0;
     }
 
     this.scene.rotation.y += delta * 0.02;

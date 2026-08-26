@@ -280,7 +280,7 @@ export default function TargetTracking({ locale, onComplete }: Props) {
               <div className="result-item">
                 <span className="result-label">{s.avgKill}</span>
                 <span className="result-value">
-                  {avgKillTime > 0 ? `${avgKillTime}${s.ms}` : '—'}
+                  {avgKillTime > 0 ? `${Math.round(avgKillTime)}${s.ms}` : '—'}
                 </span>
               </div>
               <div className="result-item">

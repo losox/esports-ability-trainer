@@ -262,7 +262,9 @@ export default function MultiTargetTracking({ locale, onComplete }: Props) {
               </div>
               <div className="result-item">
                 <span className="result-label">{s.switchTime}</span>
-                <span className="result-value">{avgSwitch > 0 ? `${avgSwitch}ms` : '—'}</span>
+                <span className="result-value">
+                  {avgSwitch > 0 ? `${Math.round(avgSwitch)}ms` : '—'}
+                </span>
               </div>
               <div className="result-item">
                 <span className="result-label">{s.noEscape}</span>

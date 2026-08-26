@@ -240,13 +240,13 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
             <div className="hud-item">
               <span className="hud-label">{s.firstDecision}</span>
               <span className="hud-value">
-                {lastDecision !== null ? `${lastDecision}${s.ms}` : '—'}
+                {lastDecision !== null ? `${Math.round(lastDecision)}${s.ms}` : '—'}
               </span>
             </div>
             <div className="hud-item">
               <span className="hud-label">{s.avgDecision}</span>
               <span className="hud-value">
-                {avgDecision !== null ? `${avgDecision}${s.ms}` : '—'}
+                {avgDecision !== null ? `${Math.round(avgDecision)}${s.ms}` : '—'}
               </span>
             </div>
           </div>
@@ -347,7 +347,7 @@ export default function DecisionSpeed({ locale, version = 'fps', onComplete }: P
                 <span className="result-label">{s.avgDecision}</span>
                 <span className="result-value">
                   {finalAvgDecision !== null && finalAvgDecision > 0
-                    ? `${finalAvgDecision}${s.ms}`
+                    ? `${Math.round(finalAvgDecision)}${s.ms}`
                     : '—'}
                 </span>
               </div>

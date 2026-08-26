@@ -4,6 +4,9 @@ import {
   calculateScore,
   calculateConsistency,
   calculateGrade,
+  getAverageTime,
+  getBestTime,
+  REQUIRED_SUCCESS_COUNT,
 } from '../../modules/d1-reaction/logic';
 import { saveTrainingSession } from '../../lib/training';
 
@@ -14,7 +17,7 @@ interface Props {
 
 const STR = {
   en: {
-    rounds: 'Round',
+    rounds: 'Success',
     lastTime: 'Last',
     avgTime: 'Average',
     bestTime: 'Best',
@@ -35,7 +38,7 @@ const STR = {
     exit: 'Exit',
   },
   zh: {
-    rounds: '第',
+    rounds: '成功',
     lastTime: '上次',
     avgTime: '平均',
     bestTime: '最佳',
@@ -57,15 +60,13 @@ const STR = {
   },
 };
 
-const ROUNDS = 10;
-
 export default function ReactionSpeed({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReactionScene | null>(null);
   const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [phase, setPhase] = useState<string>('idle');
-  const [round, setRound] = useState(0);
+  const [successCount, setSuccessCount] = useState(0);
   const [times, setTimes] = useState<number[]>([]);
   const [lastTime, setLastTime] = useState<number | null>(null);
   const [falseStarts, setFalseStarts] = useState(0);
@@ -91,14 +92,16 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
     setTimes([]);
     setLastTime(null);
     setFalseStarts(0);
-    setRound(0);
+    setSuccessCount(0);
     startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
     sceneRef.current = new ReactionScene(containerRef.current, {
       onStateChange: (state) => {
         setPhase(state);
-        if (state === 'waiting') setRound((r) => r + 1);
+      },
+      onSuccessUpdate: (count) => {
+        setSuccessCount(count);
       },
       onReaction: (time, isFalse) => {
         if (isFalse) {
@@ -108,18 +111,14 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
           setTimes((prev) => [...prev, time]);
         }
       },
-      onRoundComplete: (_round, allTimes) => {
+      onRoundComplete: (_successCount, allTimes, finalFalseStarts) => {
         setDone(true);
-        const score = calculateScore([...allTimes, ...Array(falseStarts).fill(-1)]);
-        const avgTime =
-          allTimes.length > 0
-            ? Math.round(allTimes.reduce((a, b) => a + b, 0) / allTimes.length)
-            : 0;
-        const bestTime = allTimes.length > 0 ? Math.min(...allTimes) : 0;
+        const score = calculateScore(allTimes, finalFalseStarts);
+        const avgTime = getAverageTime(allTimes);
+        const bestTime = getBestTime(allTimes);
         const consistency = calculateConsistency(allTimes);
         const durationMs = Date.now() - startTimeRef.current;
 
-        // Save to Supabase if user is logged in
         setSaving(true);
         saveTrainingSession({
           dimensionId: 1,
@@ -133,7 +132,7 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
                 avgTime,
                 bestTime,
                 consistency,
-                falseStarts,
+                falseStarts: finalFalseStarts,
                 roundsCompleted: allTimes.length,
               },
             },
@@ -152,11 +151,11 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
       },
     });
     sceneRef.current.start();
-  }, [onComplete, falseStarts]);
+  }, [onComplete]);
 
-  const avg = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null;
-  const best = times.length > 0 ? Math.min(...times) : null;
-  const score = done ? calculateScore([...times, ...Array(falseStarts).fill(-1)]) : null;
+  const avg = times.length > 0 ? getAverageTime(times) : null;
+  const best = times.length > 0 ? getBestTime(times) : null;
+  const score = done ? calculateScore(times, falseStarts) : null;
   const consistency = done ? calculateConsistency(times) : null;
   const grade = score !== null ? calculateGrade(score) : null;
 
@@ -170,24 +169,30 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
             <div className="hud-item">
               <span className="hud-label">{s.rounds}</span>
               <span className="hud-value">
-                {round}/{ROUNDS}
+                {successCount}/{REQUIRED_SUCCESS_COUNT}
               </span>
             </div>
             <div className="hud-item">
               <span className="hud-label">{s.lastTime}</span>
-              <span className="hud-value">{lastTime !== null ? `${lastTime}${s.ms}` : '—'}</span>
+              <span className="hud-value">
+                {lastTime !== null ? `${Math.round(lastTime)}${s.ms}` : '—'}
+              </span>
             </div>
             <div className="hud-item">
               <span className="hud-label">{s.avgTime}</span>
-              <span className="hud-value">{avg !== null ? `${avg}${s.ms}` : '—'}</span>
+              <span className="hud-value">{avg !== null ? `${Math.round(avg)}${s.ms}` : '—'}</span>
             </div>
             <div className="hud-item">
               <span className="hud-label">{s.bestTime}</span>
-              <span className="hud-value">{best !== null ? `${best}${s.ms}` : '—'}</span>
+              <span className="hud-value">
+                {best !== null ? `${Math.round(best)}${s.ms}` : '—'}
+              </span>
             </div>
             <div className="hud-item">
               <span className="hud-label">{s.falseStarts}</span>
-              <span className="hud-value">{falseStarts}</span>
+              <span className="hud-value false-start-count">
+                {falseStarts > 0 ? `-${falseStarts * 50}` : falseStarts}
+              </span>
             </div>
           </div>
 
@@ -249,7 +254,12 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
               </div>
               <div className="result-item">
                 <span className="result-label">{s.falseStarts}</span>
-                <span className="result-value">{falseStarts}</span>
+                <span className="result-value">
+                  {falseStarts}
+                  {falseStarts > 0 ? (
+                    <span className="penalty-hint"> (-{falseStarts * 50})</span>
+                  ) : null}
+                </span>
               </div>
             </div>
             <button className="overlay-btn" onClick={handleStart}>
@@ -309,6 +319,9 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
           font-size: 1.1rem;
           font-weight: 700;
           color: #E8E8E8;
+        }
+        .hud-value.false-start-count {
+          color: #FF4500;
         }
         .hud-center {
           flex: 1;
@@ -410,6 +423,11 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
           color: #FF4500;
           font-size: 2rem;
           font-family: Impact, sans-serif;
+        }
+        .penalty-hint {
+          font-size: 0.9rem;
+          color: #FF4500;
+          margin-left: 4px;
         }
         .save-status {
           font-size: 0.85rem;

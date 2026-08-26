@@ -209,7 +209,9 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
               </div>
               <div className="hud-item">
                 <span className="hud-label">{s.avgAim}</span>
-                <span className="hud-value">{avgAim > 0 ? `${avgAim}${s.ms}` : '—'}</span>
+                <span className="hud-value">
+                  {avgAim > 0 ? `${Math.round(avgAim)}${s.ms}` : '—'}
+                </span>
               </div>
               <div className="hud-item">
                 <span className="hud-label">{s.hitMiss}</span>
@@ -271,7 +273,9 @@ export default function AimingPrecision({ locale, onComplete }: Props) {
               </div>
               <div className="result-item">
                 <span className="result-label">{s.avgAim}</span>
-                <span className="result-value">{avgAim > 0 ? `${avgAim}${s.ms}` : '—'}</span>
+                <span className="result-value">
+                  {avgAim > 0 ? `${Math.round(avgAim)}${s.ms}` : '—'}
+                </span>
               </div>
               <div className="result-item">
                 <span className="result-label">{s.hitMiss}</span>

@@ -523,7 +523,7 @@ export class PeripheralSceneMOBA extends SceneBase {
 
   private setupClickHandler(): void {
     const canvas = this.renderer.domElement;
-    canvas.addEventListener('click', this.handleClick);
+    canvas.addEventListener('mousedown', this.handleClick);
   }
 
   private handleClick = (event: MouseEvent): void => {

@@ -285,7 +285,7 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
           <div className="hud-bottom">
             <div className="sub-metrics">
               <span className="sub-metric">
-                {s.switchReaction}: {liveMetrics?.avgSwitchReactionMs ?? 0}
+                {s.switchReaction}: {Math.round(liveMetrics?.avgSwitchReactionMs ?? 0)}
                 {s.ms}
               </span>
               <span className="sub-metric">
@@ -347,7 +347,7 @@ export default function CognitiveFlexibility({ locale, onComplete }: Props) {
               <div className="result-item">
                 <span className="result-label">{s.switchReaction}</span>
                 <span className="result-value">
-                  {metrics.avgSwitchReactionMs}
+                  {Math.round(metrics.avgSwitchReactionMs)}
                   {s.ms}
                 </span>
               </div>

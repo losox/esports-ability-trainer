@@ -285,7 +285,7 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
             <div className="hud-item">
               <span className="hud-label">{s.avgDeviation}</span>
               <span className="hud-value">
-                {currentAvgDev > 0 ? `${currentAvgDev}${s.px}` : '—'}
+                {currentAvgDev > 0 ? `${Math.round(currentAvgDev)}${s.px}` : '—'}
               </span>
             </div>
           </div>
@@ -357,7 +357,7 @@ export default function WorkingMemory({ locale, onComplete }: Props) {
               <div className="result-item">
                 <span className="result-label">{s.avgDeviation}</span>
                 <span className="result-value">
-                  {stats.avgDeviation}
+                  {Math.round(stats.avgDeviation)}
                   {s.px}
                 </span>
               </div>

@@ -352,7 +352,9 @@ export default function PeripheralVision({ locale, onComplete }: Props) {
               </div>
               <div className="result-item">
                 <span className="result-label">{s.edgeReact}</span>
-                <span className="result-value">{avgEdgeReact > 0 ? `${avgEdgeReact}ms` : '—'}</span>
+                <span className="result-value">
+                  {avgEdgeReact > 0 ? `${Math.round(avgEdgeReact)}ms` : '—'}
+                </span>
               </div>
               <div className="result-item">
                 <span className="result-label">{s.misses}</span>

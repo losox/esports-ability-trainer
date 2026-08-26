@@ -198,7 +198,7 @@ export class AimingScene extends SceneBase {
 
   private setupInputHandlers(): void {
     document.addEventListener('mousemove', this.handleMouseMove);
-    this.renderer.domElement.addEventListener('click', this.handleShoot);
+    this.renderer.domElement.addEventListener('mousedown', this.handleShoot);
   }
 
   private handleMouseMove = (event: MouseEvent): void => {
