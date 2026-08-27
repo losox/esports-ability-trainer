@@ -716,7 +716,7 @@ export class DecisionScene extends SceneBase {
       clearTimeout(this.nextRoundTimeout);
       this.nextRoundTimeout = null;
     }
-    this.renderer.domElement.removeEventListener('click', this.handleClick);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleClick);
     this.clearTargets();
     super.dispose();
   }

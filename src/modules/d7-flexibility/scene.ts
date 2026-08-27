@@ -614,7 +614,7 @@ export class FlexibilityScene extends SceneBase {
     if (this.patternCheckInterval) {
       clearInterval(this.patternCheckInterval);
     }
-    this.renderer.domElement.removeEventListener('click', this.handleClick);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleClick);
     document.removeEventListener('keydown', this.handleKeyDown);
     super.dispose();
   }

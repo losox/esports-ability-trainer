@@ -541,7 +541,7 @@ export class AimingScene extends SceneBase {
     }
     this.hitEffects = [];
     document.removeEventListener('mousemove', this.handleMouseMove);
-    this.renderer.domElement.removeEventListener('click', this.handleShoot);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleShoot);
     if (this.audioCtx) {
       void this.audioCtx.close();
       this.audioCtx = null;

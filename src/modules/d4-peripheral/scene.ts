@@ -747,7 +747,7 @@ export class PeripheralSceneMOBA extends SceneBase {
       this.monsters.delete(id);
     }
 
-    this.renderer.domElement.removeEventListener('click', this.handleClick);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleClick);
     super.dispose();
   }
 }

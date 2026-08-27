@@ -228,7 +228,7 @@ export class ReactionScene extends SceneBase {
     if (this.waitTimeout) {
       clearTimeout(this.waitTimeout);
     }
-    this.renderer.domElement.removeEventListener('click', this.handleClick);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleClick);
     super.dispose();
   }
 }

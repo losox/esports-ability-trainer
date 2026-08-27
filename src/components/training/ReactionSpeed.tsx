@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { ReactionScene } from '../../modules/d1-reaction/scene';
+import { ReactionSceneForest } from '../../modules/d1-reaction/scene-forest';
 import {
   calculateScore,
   calculateConsistency,
@@ -62,7 +62,7 @@ const STR = {
 
 export default function ReactionSpeed({ locale, onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<ReactionScene | null>(null);
+  const sceneRef = useRef<ReactionSceneForest | null>(null);
   const startTimeRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [phase, setPhase] = useState<string>('idle');
@@ -96,7 +96,7 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
     startTimeRef.current = Date.now();
 
     sceneRef.current?.dispose();
-    sceneRef.current = new ReactionScene(containerRef.current, {
+    sceneRef.current = new ReactionSceneForest(containerRef.current, {
       onStateChange: (state) => {
         setPhase(state);
       },
@@ -324,21 +324,29 @@ export default function ReactionSpeed({ locale, onComplete }: Props) {
           color: #FF4500;
         }
         .hud-center {
-          flex: 1;
+          position: absolute;
+          bottom: 12%;
+          left: 0;
+          right: 0;
           display: flex;
-          align-items: center;
           justify-content: center;
+          pointer-events: none;
         }
         .phase-msg {
           font-size: 1.6rem;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.1em;
+          padding: 12px 28px;
+          border-radius: 8px;
+          background: rgba(14, 14, 16, 0.65);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .phase-wait { color: #4488ff; }
+        .phase-wait { color: #4d8cff; }
         .phase-go {
           color: #FFD700;
-          text-shadow: 0 0 20px rgba(255,215,0,0.6);
+          text-shadow: 0 0 24px rgba(255,215,0,0.7);
           animation: pulse 0.5s infinite alternate;
         }
         @keyframes pulse {

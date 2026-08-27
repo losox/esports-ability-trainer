@@ -8,6 +8,30 @@ interface SceneBaseOptions {
   onPointerLockChange?: (locked: boolean) => void;
 }
 
+/** 收集并释放材质上的所有纹理。 */
+function disposeMaterialTextures(material: THREE.Material): void {
+  const textureKeys = [
+    'map',
+    'alphaMap',
+    'aoMap',
+    'bumpMap',
+    'displacementMap',
+    'emissiveMap',
+    'envMap',
+    'lightMap',
+    'metalnessMap',
+    'normalMap',
+    'roughnessMap',
+  ];
+  const mat = material as unknown as Record<string, THREE.Texture | null | undefined>;
+  for (const key of textureKeys) {
+    const texture = mat[key];
+    if (texture && typeof texture.dispose === 'function') {
+      texture.dispose();
+    }
+  }
+}
+
 export abstract class SceneBase {
   protected renderer: THREE.WebGLRenderer;
   protected scene: THREE.Scene;
@@ -18,8 +42,12 @@ export abstract class SceneBase {
   protected animationId: number | null = null;
   protected isRunning = false;
   protected disposed = false;
+  protected contextLost = false;
   private onPointerLockChange?: (locked: boolean) => void;
   private resizeObserver: ResizeObserver | null = null;
+  private contextLostOverlay: HTMLDivElement | null = null;
+  private boundHandleContextLost: (event: Event) => void;
+  private boundHandleContextRestored: () => void;
 
   constructor(options: SceneBaseOptions) {
     this.container = options.container;
@@ -30,7 +58,21 @@ export abstract class SceneBase {
     const width = this.container.clientWidth || 800;
     const height = this.container.clientHeight || 600;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // WebGL 支持检查：无法创建上下文时给出明确提示，避免黑屏后无信息。
+    const gl = this.container.ownerDocument.createElement('canvas').getContext('webgl2');
+    if (!gl) {
+      this.showFallbackMessage(
+        'WebGL not supported',
+        'Your browser or device does not support WebGL, which is required for 3D training.',
+      );
+      throw new Error('WebGL not supported');
+    }
+
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+    });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -50,6 +92,58 @@ export abstract class SceneBase {
     if (this.cameraType === 'first-person') {
       this.setupPointerLock();
     }
+
+    this.boundHandleContextLost = (event) => this.handleContextLost(event);
+    this.boundHandleContextRestored = () => this.handleContextRestored();
+    this.renderer.domElement.addEventListener('webglcontextlost', this.boundHandleContextLost);
+    this.renderer.domElement.addEventListener(
+      'webglcontextrestored',
+      this.boundHandleContextRestored,
+    );
+  }
+
+  private showFallbackMessage(title: string, message: string): void {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'absolute';
+    overlay.style.inset = '0';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.background = 'rgba(22,22,24,0.95)';
+    overlay.style.color = '#E8E8E8';
+    overlay.style.padding = '24px';
+    overlay.style.textAlign = 'center';
+    overlay.style.zIndex = '10000';
+    overlay.innerHTML = `
+      <h2 style="margin:0 0 12px;color:#FF4500;font-family:Impact,sans-serif;font-size:2rem">${title}</h2>
+      <p style="max-width:480px;color:#7A7A82;margin:0 0 20px">${message}</p>
+      <button id="scene-reload-btn" style="padding:12px 28px;border:2px solid #FF4500;background:#FF4500;color:#fff;font-weight:700;cursor:pointer;border-radius:4px">Reload</button>
+    `;
+    this.container.appendChild(overlay);
+    overlay
+      .querySelector('#scene-reload-btn')
+      ?.addEventListener('click', () => window.location.reload());
+  }
+
+  private handleContextLost(event: Event): void {
+    event.preventDefault();
+    this.contextLost = true;
+    this.stop();
+    if (!this.contextLostOverlay) {
+      this.showFallbackMessage(
+        'Graphics context lost',
+        'The 3D graphics context was lost, usually due to memory pressure or GPU recovery. Click Reload to restart this training.',
+      );
+      this.contextLostOverlay = this.container.lastElementChild as HTMLDivElement;
+    }
+  }
+
+  private handleContextRestored(): void {
+    // 实际恢复需要重新创建所有 GPU 资源，对当前架构成本较高。
+    // 这里给出友好提示，让用户刷新页面，避免继续黑屏。
+    this.contextLost = true;
+    this.stop();
   }
 
   private setupCamera(): void {
@@ -96,7 +190,7 @@ export abstract class SceneBase {
   }
 
   private handleResize(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.contextLost) return;
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     if (width === 0 || height === 0) return;
@@ -107,7 +201,7 @@ export abstract class SceneBase {
   }
 
   start(): void {
-    if (this.isRunning) return;
+    if (this.isRunning || this.contextLost) return;
     this.isRunning = true;
     this.onInit();
     this.animate();
@@ -122,7 +216,7 @@ export abstract class SceneBase {
   }
 
   private animate = (): void => {
-    if (!this.isRunning || this.disposed) return;
+    if (!this.isRunning || this.disposed || this.contextLost) return;
     this.animationId = requestAnimationFrame(this.animate);
     const delta = 0.016;
     this.onUpdate(delta);
@@ -144,16 +238,28 @@ export abstract class SceneBase {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
 
+    this.renderer.domElement.removeEventListener('webglcontextlost', this.boundHandleContextLost);
+    this.renderer.domElement.removeEventListener(
+      'webglcontextrestored',
+      this.boundHandleContextRestored,
+    );
+
+    // 遍历场景：释放几何体、材质及其贴图，避免 GPU 内存泄漏导致上下文丢失。
     this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.Sprite || obj instanceof THREE.Line) {
         obj.geometry?.dispose();
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m) => m.dispose());
-        } else {
-          obj.material?.dispose();
-        }
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+        materials.forEach((material) => {
+          if (material) {
+            disposeMaterialTextures(material);
+            material.dispose();
+          }
+        });
       }
     });
+
+    // 释放场景层级本身
+    this.scene.clear();
 
     this.renderer.dispose();
     if (this.renderer.domElement.parentNode) {

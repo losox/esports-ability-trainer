@@ -571,7 +571,7 @@ export class MemoryScene extends SceneBase {
     this.clearMarkers();
     this.clearRevealMeshes();
     this.clearInterference();
-    this.renderer.domElement.removeEventListener('click', this.handleClick);
+    this.renderer.domElement.removeEventListener('mousedown', this.handleClick);
     super.dispose();
   }
 }
