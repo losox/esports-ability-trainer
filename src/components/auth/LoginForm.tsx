@@ -15,6 +15,7 @@ interface Props {
     orDivider: string;
     noAccount: string;
     signupLink: string;
+    forgotLink: string;
     errorEmail: string;
     errorPassword: string;
     errorInvalid: string;
@@ -26,6 +27,7 @@ interface Props {
     verifiedNotice: string;
   };
   signupPath: string;
+  forgotPath: string;
   dashboardPath: string;
 }
 
@@ -39,7 +41,12 @@ function categorizeError(message: string): ErrorKind {
   return 'generic';
 }
 
-export default function LoginForm({ translations: t, signupPath, dashboardPath }: Props) {
+export default function LoginForm({
+  translations: t,
+  signupPath,
+  forgotPath,
+  dashboardPath,
+}: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +55,7 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
   const [verified] = useState(() => {
     if (typeof window === 'undefined') return false;
     const params = window.location.search;
-    return params.includes('verified=1');
+    return params.includes('verified=1') || params.includes('registered=1');
   });
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
@@ -228,6 +235,12 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
             disabled={loading}
             autoComplete="current-password"
           />
+        </div>
+
+        <div className="forgot-row">
+          <a href={forgotPath} className="forgot-link">
+            {t.forgotLink}
+          </a>
         </div>
 
         {error && (

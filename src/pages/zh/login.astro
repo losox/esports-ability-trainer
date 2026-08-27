@@ -17,6 +17,7 @@ const t = getTranslations(locale);
         locale={locale}
         translations={t.auth}
         signupPath={getLocalePath(locale, '/register')}
+        forgotPath={getLocalePath(locale, '/forgot-password')}
         dashboardPath={getLocalePath(locale, '/dashboard')}
       />
     </div>
@@ -223,5 +224,19 @@ const t = getTranslations(locale);
     border-color: var(--accent);
     color: var(--accent);
     background: var(--accent-dim);
+  }
+  :global(.forgot-row) {
+    display: flex;
+    justify-content: flex-end;
+    margin: 2px 0 8px;
+  }
+  :global(.forgot-link) {
+    color: var(--gold);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  :global(.forgot-link:hover) {
+    text-decoration: underline;
   }
 </style>

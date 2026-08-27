@@ -274,3 +274,244 @@ drop trigger if exists on_plans_update on public.training_plans;
 create trigger on_plans_update
   before update on public.training_plans
   for each row execute function public.update_updated_at();
+
+-- ============================================================
+-- 8. device_registrations — 设备注册计数（防刷：同一设备最多10个账号）
+-- ============================================================
+create table if not exists public.device_registrations (
+  device_fp text primary key,
+  register_count integer not null default 0,
+  last_registered_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  constraint device_registrations_count_check check (register_count >= 0 and register_count <= 10)
+);
+
+-- ============================================================
+-- 9. password_reset_codes — 密码重置验证码
+-- ============================================================
+create table if not exists public.password_reset_codes (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  code text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  used_at timestamptz,
+  is_used boolean not null default false
+);
+
+create index if not exists idx_reset_codes_email on public.password_reset_codes(email, is_used);
+create index if not exists idx_reset_codes_expires on public.password_reset_codes(expires_at);
+
+-- ============================================================
+-- 10. password_reset_attempts — 密码重置频率（每账号24h限5次）
+-- ============================================================
+create table if not exists public.password_reset_attempts (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_reset_attempts_email_time on public.password_reset_attempts(email, created_at desc);
+
+-- ============================================================
+-- RLS：新增表的行级安全
+-- ============================================================
+
+-- device_registrations：仅允许 service_role 写入（前端通过 RPC 调用）
+alter table public.device_registrations enable row level security;
+drop policy if exists "device_registrations_select_service" on public.device_registrations;
+create policy "device_registrations_select_service" on public.device_registrations for select using (false);
+
+-- password_reset_codes：仅允许 service_role 读写
+alter table public.password_reset_codes enable row level security;
+drop policy if exists "reset_codes_select_service" on public.password_reset_codes;
+create policy "reset_codes_select_service" on public.password_reset_codes for select using (false);
+drop policy if exists "reset_codes_insert_service" on public.password_reset_codes;
+create policy "reset_codes_insert_service" on public.password_reset_codes for insert with check (false);
+drop policy if exists "reset_codes_update_service" on public.password_reset_codes;
+create policy "reset_codes_update_service" on public.password_reset_codes for update using (false);
+
+-- password_reset_attempts：仅允许 service_role 写入
+alter table public.password_reset_attempts enable row level security;
+drop policy if exists "reset_attempts_select_service" on public.password_reset_attempts;
+create policy "reset_attempts_select_service" on public.password_reset_attempts for select using (false);
+drop policy if exists "reset_attempts_insert_service" on public.password_reset_attempts;
+create policy "reset_attempts_insert_service" on public.password_reset_attempts for insert with check (false);
+
+-- ============================================================
+-- RPC：检查设备注册数（含原子递增）
+-- ============================================================
+create or replace function public.check_device_register(p_device_fp text)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_count integer;
+  v_allowed boolean := false;
+begin
+  select register_count into v_count
+  from public.device_registrations
+  where device_fp = p_device_fp;
+
+  if v_count is null then
+    v_count := 0;
+  end if;
+
+  v_allowed := v_count < 10;
+
+  if v_allowed then
+    insert into public.device_registrations (device_fp, register_count)
+    values (p_device_fp, 1)
+    on conflict (device_fp) do update
+    set register_count = device_registrations.register_count + 1,
+        last_registered_at = now();
+  end if;
+
+  return jsonb_build_object(
+    'allowed', v_allowed,
+    'current_count', v_count,
+    'remaining', greatest(0, 10 - v_count)
+  );
+end;
+$$;
+
+-- ============================================================
+-- RPC：申请密码重置验证码（含频率限制检查）
+-- ============================================================
+create or replace function public.request_password_reset(p_email text)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_code text;
+  v_expires timestamptz;
+  v_recent_count integer;
+  v_allowed boolean := false;
+  v_rate_limit_reset_at timestamptz;
+begin
+  -- 1. 频率检查：该邮箱过去24h内重置次数
+  select count(*) into v_recent_count
+  from public.password_reset_attempts
+  where email = p_email
+    and created_at > now() - interval '24 hours';
+
+  v_allowed := v_recent_count < 5;
+
+  if not v_allowed then
+    select min(created_at) + interval '24 hours' into v_rate_limit_reset_at
+    from public.password_reset_attempts
+    where email = p_email
+      and created_at > now() - interval '24 hours';
+
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'rate_limit',
+      'attempts', v_recent_count,
+      'max_attempts', 5,
+      'reset_at', to_char(v_rate_limit_reset_at, 'YYYY-MM-DD HH24:MI:SS')
+    );
+  end if;
+
+  -- 2. 检查邮箱是否存在于 auth.users
+  if not exists (select 1 from auth.users where lower(email) = lower(p_email)) then
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'email_not_found'
+    );
+  end if;
+
+  -- 3. 生成6位随机验证码
+  v_code := lpad(floor(random() * 1000000)::text, 6, '0');
+  v_expires := now() + interval '10 minutes';
+
+  -- 4. 标记该邮箱之前未使用的验证码为已使用
+  update public.password_reset_codes
+  set is_used = true, used_at = now()
+  where email = p_email and is_used = false;
+
+  -- 5. 存储新验证码
+  insert into public.password_reset_codes (email, code, expires_at)
+  values (p_email, v_code, v_expires);
+
+  -- 6. 记录本次重置尝试（用于24h频率统计）
+  insert into public.password_reset_attempts (email)
+  values (p_email);
+
+  return jsonb_build_object(
+    'success', true,
+    'code', v_code,
+    'expires_at', to_char(v_expires, 'YYYY-MM-DD HH24:MI:SS'),
+    'attempts_used', v_recent_count + 1,
+    'attempts_remaining', 5 - v_recent_count - 1
+  );
+end;
+$$;
+
+-- ============================================================
+-- RPC：验证密码重置验证码并更新密码
+-- ============================================================
+create or replace function public.verify_and_reset_password(
+  p_email text,
+  p_code text,
+  p_new_password text
+)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_record public.password_reset_codes%rowtype;
+  v_user_id uuid;
+begin
+  -- 1. 查找验证码记录（最新的未使用且未过期）
+  select * into v_record
+  from public.password_reset_codes
+  where email = p_email
+    and is_used = false
+    and expires_at > now()
+  order by created_at desc
+  limit 1;
+
+  if v_record.id is null then
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'invalid_code'
+    );
+  end if;
+
+  if v_record.code != p_code then
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'code_mismatch'
+    );
+  end if;
+
+  -- 2. 标记验证码为已使用
+  update public.password_reset_codes
+  set is_used = true, used_at = now()
+  where id = v_record.id;
+
+  -- 3. 更新 auth.users 密码
+  update auth.users
+  set encrypted_password = crypt(p_new_password, gen_salt('bf'))
+  where lower(email) = lower(p_email)
+  returning id into v_user_id;
+
+  if v_user_id is null then
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'user_not_found'
+    );
+  end if;
+
+  return jsonb_build_object(
+    'success', true,
+    'user_id', v_user_id
+  );
+end;
+$$;
+
+-- 安装 pgcrypto 扩展（crypt 函数需要）
+create extension if not exists pgcrypto;

@@ -30,9 +30,14 @@ const browserGlobals = {
   localStorage: 'readonly',
   navigator: 'readonly',
   location: 'readonly',
+  screen: 'readonly',
   React: 'readonly',
   AudioContext: 'readonly',
   OscillatorType: 'readonly',
+  Deno: 'readonly',
+  Request: 'readonly',
+  Response: 'readonly',
+  fetch: 'readonly',
 };
 
 const nodeGlobals = {
@@ -118,6 +123,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '.astro/', 'design/'],
+    ignores: ['dist/', 'node_modules/', '.astro/', 'design/', 'supabase/functions/'],
   },
 ];

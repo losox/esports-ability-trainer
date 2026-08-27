@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabase } from '../../lib/supabase';
+import { getDeviceFingerprint } from '../../lib/device-fingerprint';
+import { checkDeviceRegistration } from '../../lib/auth';
 import type { Locale } from '../../i18n/ui';
 
 type Preference = 'fps' | 'moba' | 'all';
@@ -28,6 +30,9 @@ interface Props {
     errorConfirm: string;
     errorExists: string;
     errorGeneric: string;
+    deviceLimitExceeded: string;
+    alreadyRegistered: string;
+    registeredSuccess: string;
   };
   loginPath: string;
   dashboardPath: string;
@@ -39,6 +44,7 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
   const [confirm, setConfirm] = useState('');
   const [pref, setPref] = useState<Preference>('all');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,6 +67,7 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
+      setInfo(null);
 
       if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
         setError(t.errorEmail);
@@ -83,19 +90,33 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
 
       setLoading(true);
       try {
+        const deviceFp = getDeviceFingerprint();
+        const deviceCheck = await checkDeviceRegistration(deviceFp);
+
+        if (!deviceCheck.allowed) {
+          setError(t.deviceLimitExceeded);
+          setLoading(false);
+          return;
+        }
+
         const { data, error: signUpError } = await sb.auth.signUp({
           email,
           password,
           options: { data: { preference: pref } },
         });
         if (signUpError) {
-          setError(signUpError.message.includes('already') ? t.errorExists : t.errorGeneric);
+          const msg = signUpError.message.toLowerCase();
+          if (msg.includes('already') || msg.includes('already registered')) {
+            setError(t.alreadyRegistered);
+          } else {
+            setError(t.errorGeneric);
+          }
           return;
         }
         if (data.session) {
           window.location.href = dashboardPath;
         } else {
-          window.location.href = `${loginPath}?verified=1`;
+          window.location.href = `${loginPath}?registered=1`;
         }
       } catch {
         setError(t.errorGeneric);
@@ -209,6 +230,7 @@ export default function RegisterForm({ translations: t, loginPath, dashboardPath
         </div>
 
         {error && <p className="error-msg">{error}</p>}
+        {info && <p className="form-info">{info}</p>}
 
         <button type="submit" className="submit-btn" disabled={loading}>
           {loading ? '...' : t.registerBtn}
