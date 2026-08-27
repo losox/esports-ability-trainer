@@ -339,6 +339,11 @@ drop policy if exists "reset_attempts_insert_service" on public.password_reset_a
 create policy "reset_attempts_insert_service" on public.password_reset_attempts for insert with check (false);
 
 -- ============================================================
+-- 扩展：pgcrypto（crypt 函数需要，用于更新 auth.users 密码）
+-- ============================================================
+create extension if not exists pgcrypto;
+
+-- ============================================================
 -- RPC：检查设备注册数（含原子递增）
 -- ============================================================
 create or replace function public.check_device_register(p_device_fp text)
@@ -459,7 +464,7 @@ create or replace function public.verify_and_reset_password(
 )
 returns jsonb
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, auth, extensions
 as $$
 declare
   v_record public.password_reset_codes%rowtype;
@@ -495,7 +500,7 @@ begin
 
   -- 3. 更新 auth.users 密码
   update auth.users
-  set encrypted_password = crypt(p_new_password, gen_salt('bf'))
+  set encrypted_password = extensions.crypt(p_new_password, extensions.gen_salt('bf'))
   where lower(email) = lower(p_email)
   returning id into v_user_id;
 
@@ -512,6 +517,3 @@ begin
   );
 end;
 $$;
-
--- 安装 pgcrypto 扩展（crypt 函数需要）
-create extension if not exists pgcrypto;

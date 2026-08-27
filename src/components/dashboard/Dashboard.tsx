@@ -47,7 +47,7 @@ interface Props {
   trainEntryPath: string;
   homePath: string;
   // Link factory: given a dimension id, return the train/test page URL (already locale-prefixed)
-  getDimensionPath: (dimensionId: number) => string;
+  dimensionPaths: Record<number, string>;
 }
 
 function formatDateAgo(dateStr: string, locale: Locale): string {
@@ -80,7 +80,7 @@ export default function Dashboard({
   testPath,
   trainEntryPath,
   homePath,
-  getDimensionPath,
+  dimensionPaths,
   locale,
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
@@ -124,6 +124,7 @@ export default function Dashboard({
         setRecentSessions(sessions);
       } catch (err) {
         console.error('Dashboard auth/load error:', err);
+        setChecking(false);
         setLoadingStats(false);
       }
     };
@@ -211,10 +212,10 @@ export default function Dashboard({
                   </div>
                 </div>
                 <div className="dim-item-actions">
-                  <a className="dim-btn dim-btn-train" href={getDimensionPath(d.id)}>
+                  <a className="dim-btn dim-btn-train" href={dimensionPaths[d.id]}>
                     {t.train}
                   </a>
-                  <a className="dim-btn dim-btn-test" href={getDimensionPath(d.id)}>
+                  <a className="dim-btn dim-btn-test" href={dimensionPaths[d.id]}>
                     {t.test}
                   </a>
                 </div>

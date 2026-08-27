@@ -5,7 +5,6 @@ import { getTranslations, getLocalePath, type Locale } from '../i18n/ui';
 
 const locale: Locale = 'en';
 const t = getTranslations(locale);
-
 const dimensions = [
   {
     id: 1,
@@ -72,6 +71,10 @@ const dimensions = [
     desc: t.dimensions.d8.desc,
   },
 ];
+
+const dimensionPaths = Object.fromEntries(
+  dimensions.map((d) => [d.id, getLocalePath(locale, `/train/d${d.id}`)]),
+);
 ---
 
 <BaseLayout
@@ -89,7 +92,7 @@ const dimensions = [
     testPath={getLocalePath(locale, '/train/d1')}
     trainEntryPath={getLocalePath(locale, '/train/d1')}
     homePath={getLocalePath(locale)}
-    getDimensionPath={(id: number) => getLocalePath(locale, `/train/d${id}`)}
+    dimensionPaths={dimensionPaths}
   />
 </BaseLayout>
 
