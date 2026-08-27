@@ -1,5 +1,6 @@
 ---
 import { getTranslations, getLocalePath, getAlternateLocale, type Locale } from '../i18n/ui';
+import AuthNav from '../components/AuthNav';
 
 interface Props {
   locale: Locale;
@@ -11,6 +12,20 @@ const { locale, title, description = '' } = Astro.props;
 const t = getTranslations(locale);
 const altLocale = getAlternateLocale(locale);
 const altPath = altLocale === 'en' ? '/' : '/zh/';
+
+const authNavTranslations = {
+  home: t.nav.home,
+  login: t.nav.login,
+  register: t.nav.register,
+  dashboard: t.nav.dashboard,
+  logout: t.nav.logout,
+  welcomeUser: t.nav.welcomeUser,
+};
+
+const homePath = getLocalePath(locale);
+const loginPath = getLocalePath(locale, '/login');
+const registerPath = getLocalePath(locale, '/register');
+const dashboardPath = getLocalePath(locale, '/dashboard');
 ---
 
 <!doctype html>
@@ -31,16 +46,18 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
   <body>
     <nav class="nav-bar">
       <div class="nav-container">
-        <a href={getLocalePath(locale)} class="logo">FORGE<span>GAMING</span></a>
-        <div class="nav-links">
-          <a href={getLocalePath(locale)} class="nav-link">{t.nav.home}</a>
-          <a href={getLocalePath(locale, '/login')} class="nav-link nav-link-login">{t.nav.login}</a
-          >
-          <a href={getLocalePath(locale, '/register')} class="nav-link nav-link-register"
-            >{t.nav.register}</a
-          >
-          <a href={altPath} class="lang-switch">{t.nav.languageSwitch}</a>
-        </div>
+        <a href={homePath} class="logo">FORGE<span>GAMING</span></a>
+        <AuthNav
+          client:load
+          locale={locale}
+          translations={authNavTranslations}
+          homePath={homePath}
+          loginPath={loginPath}
+          registerPath={registerPath}
+          dashboardPath={dashboardPath}
+          langSwitchPath={altPath}
+          langSwitchLabel={t.nav.languageSwitch}
+        />
       </div>
     </nav>
 
@@ -154,6 +171,32 @@ const altPath = altLocale === 'en' ? '/' : '/zh/';
         padding: 6px 16px;
         border-radius: 4px;
         font-weight: 600;
+      }
+      .nav-separator {
+        color: var(--text-dim);
+        opacity: 0.5;
+        margin: 0 4px;
+      }
+      .nav-link-dashboard {
+        color: var(--gold);
+        font-weight: 500;
+      }
+      .nav-link-dashboard:hover {
+        color: var(--gold);
+        text-decoration: underline;
+      }
+      .nav-link-logout {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: var(--text-dim);
+        transition: color 0.2s;
+        padding: 0;
+        font-family: inherit;
+      }
+      .nav-link-logout:hover {
+        color: var(--accent);
       }
       .lang-switch {
         font-size: 0.85rem;

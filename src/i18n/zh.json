@@ -6,6 +6,7 @@
     "register": "注册",
     "dashboard": "训练中心",
     "logout": "退出登录",
+    "welcomeUser": "欢迎，{username}",
     "languageSwitch": "EN"
   },
   "hero": {

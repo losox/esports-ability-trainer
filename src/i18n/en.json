@@ -4,8 +4,9 @@
     "about": "About",
     "login": "Log In",
     "register": "Sign Up",
-    "dashboard": "Dashboard",
+    "dashboard": "Training Center",
     "logout": "Log Out",
+    "welcomeUser": "Welcome, {username}",
     "languageSwitch": "中文"
   },
   "hero": {
