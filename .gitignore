@@ -26,3 +26,6 @@ design/
 
 # Test coverage
 coverage/
+
+# Supabase temp files
+supabase/.temp/
