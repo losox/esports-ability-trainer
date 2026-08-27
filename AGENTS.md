@@ -1,4 +1,4 @@
-# AGENTS.md — 项目约定与工作规范
+# AGENTS.md — 电竞能力训练平台（项目专属规范）
 
 ## 项目概述
 
@@ -15,7 +15,7 @@
 4. 信息架构与交互设计 ✅
 5. 视觉设计 ✅
 6. 技术方案 ✅
-7. 开发实现
+7. 开发实现 ← 当前
 8. 测试与上线
 
 ## 关键约定
@@ -24,17 +24,6 @@
 
 - **`docs/开发规范.md`**：编码规则（TypeScript/React/Astro/Three.js）、代码审查清单、安全规则、反模式清单。写代码、提交代码前必读
 - **`docs/开发流程.md`**：Git分支策略、提交规范、TDD 7阶段流程、测试要求、CI/CD、部署流程。初始化项目、写功能、提交、测试、部署时必读
-
-### 开发精华原则（始终遵守）
-
-1. 先写测试再写实现（TDD）
-2. 每次提交前按审查清单自检
-3. 敏感操作（部署、数据库变更、破坏性git操作）必须用户确认
-4. 构建或测试中保持沟通，不静默执行
-5. 密钥放.env.local，禁止提交到git
-6. 多语言修改必须同步en/zh
-7. Three.js对象切换时必须dispose
-8. 不过度设计，只做当前需求
 
 ### 文档维护
 
@@ -47,12 +36,6 @@
 - **`log/` 目录**：按天创建开发日志（如 `log/2026-08-27.md`），简洁概括型，记录重要开发节点、已完成/待办、遇到的问题、关键决策
 - 新会话开启时先读 `log/` 目录下最新日志，了解当前进度，决定从何继续
 - 同时维护 `log/技术文档.md`：记录系统架构、模块结构、数据模型、关键接口等技术细节
-
-### 沟通方式
-
-- 所有输出使用中文
-- 每个设计决策需用户确认后才算锁定，未确认的标注"待确认"
-- 讨论时先提出方案，用户拍板后记录
 
 ### 训练设计9条通用原则
 
@@ -99,3 +82,20 @@
 - 多语言同步规则：任何一个语言版本的修改，另一语种必须同步修改
 - 技术栈：Astro（静态页SSG，零JS，SEO最优）+ React岛屿（交互页面）+ Three.js（3D训练）+ Supabase（后端）+ Vercel（部署）
 - 多语言策略：URL路由，.com默认英语，输入/zh/才进入中文，不做浏览器语言自动检测跳转
+
+## 外部资源坐标
+
+- **部署目标**：Vercel 生产站点 https://esports-ability-trainer.vercel.app（en 默认首页）
+- **GitHub 仓库**：losox/esports-ability-trainer（main = 生产分支）
+- **Supabase 项目**：esports-trainer
+- **Supabase URL**：https://yvrccgtqcmfidcfdzpce.supabase.co
+- **Supabase Dashboard SQL Editor**：https://supabase.com/dashboard/project/yvrccgtqcmfidcfdzpce/sql/new
+- **Supabase PAT Token**：存于 `.env.local`（变量名 `SUPABASE_ACCESS_TOKEN`）
+- **Supabase CLI 使用方式**：`$env:SUPABASE_ACCESS_TOKEN='token'; npx supabase db query --linked --project-ref yvrccgtqcmfidcfdzpce [sql]`
+- **数据库 schema**：`supabase/schema.sql`
+- **环境变量位置**：`.env.local`（含 `PUBLIC_SUPABASE_URL`、`PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SECRET_KEY`、`SUPABASE_DB_PASSWORD`、`SUPABASE_ACCESS_TOKEN`）
+
+## 当前待办
+
+- 全流程手动测试（登录 → D1 训练 → 数据保存 → Dashboard 显示最近训练）
+- 修复 Dashboard「最近训练」无限 loading（已修复代码 + 数据库权限，待验证）
