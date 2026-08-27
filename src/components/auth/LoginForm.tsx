@@ -19,16 +19,39 @@ interface Props {
     errorPassword: string;
     errorInvalid: string;
     errorGeneric: string;
+    errorNotConfirmed: string;
+    errorRateLimit: string;
+    resendConfirm: string;
+    confirmSent: string;
+    verifiedNotice: string;
   };
   signupPath: string;
   dashboardPath: string;
+}
+
+type ErrorKind = 'invalid' | 'not_confirmed' | 'rate_limit' | 'generic';
+
+function categorizeError(message: string): ErrorKind {
+  const lower = message.toLowerCase();
+  if (lower.includes('not confirmed')) return 'not_confirmed';
+  if (lower.includes('rate') || lower.includes('too many')) return 'rate_limit';
+  if (lower.includes('invalid')) return 'invalid';
+  return 'generic';
 }
 
 export default function LoginForm({ translations: t, signupPath, dashboardPath }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<ErrorKind | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verified] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const params = window.location.search;
+    return params.includes('verified=1');
+  });
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -39,17 +62,39 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
           data: { session },
         } = await sb.auth.getSession();
         if (session) window.location.href = dashboardPath;
-      } catch {
-        /* ignore session check errors */
+      } catch (err) {
+        console.debug('[login] session check failed:', err);
       }
     };
     checkSession();
   }, [dashboardPath]);
 
+  const handleResend = useCallback(async () => {
+    if (!email) return;
+    setResending(true);
+    try {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { error } = await sb.auth.resend({
+        type: 'signup',
+        email,
+      });
+      if (!error) {
+        setResent(true);
+      }
+    } catch (err) {
+      console.error('[login] resend failed:', err);
+    } finally {
+      setResending(false);
+    }
+  }, [email]);
+
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
+      setErrorKind(null);
+      setResent(false);
 
       if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
         setError(t.errorEmail);
@@ -63,19 +108,40 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
       const sb = getSupabase();
       if (!sb) {
         setError(t.errorGeneric);
+        setErrorKind('generic');
         return;
       }
 
       setLoading(true);
       try {
-        const { error: authError } = await sb.auth.signInWithPassword({ email, password });
+        const { error: authError } = await sb.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (authError) {
-          setError(authError.message.includes('Invalid') ? t.errorInvalid : t.errorGeneric);
+          const kind = categorizeError(authError.message);
+          console.warn('[login] auth error:', kind, authError.message);
+          setErrorKind(kind);
+          switch (kind) {
+            case 'invalid':
+              setError(t.errorInvalid);
+              break;
+            case 'not_confirmed':
+              setError(t.errorNotConfirmed);
+              break;
+            case 'rate_limit':
+              setError(t.errorRateLimit);
+              break;
+            default:
+              setError(t.errorGeneric);
+          }
           return;
         }
         window.location.href = dashboardPath;
-      } catch {
+      } catch (err) {
+        console.error('[login] signInWithPassword threw:', err);
         setError(t.errorGeneric);
+        setErrorKind('generic');
       } finally {
         setLoading(false);
       }
@@ -86,9 +152,11 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
   const handleOAuth = useCallback(
     async (provider: 'github' | 'google') => {
       setError(null);
+      setErrorKind(null);
       const sb = getSupabase();
       if (!sb) {
         setError(t.errorGeneric);
+        setErrorKind('generic');
         return;
       }
       setLoading(true);
@@ -98,12 +166,16 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
           options: { redirectTo: `${window.location.origin}${dashboardPath}` },
         });
         if (oauthError) {
+          console.error('[login] OAuth error:', oauthError);
           setLoading(false);
           setError(t.errorGeneric);
+          setErrorKind('generic');
         }
-      } catch {
+      } catch (err) {
+        console.error('[login] OAuth threw:', err);
         setLoading(false);
         setError(t.errorGeneric);
+        setErrorKind('generic');
       }
     },
     [t, dashboardPath],
@@ -111,6 +183,8 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
 
   return (
     <div className="auth-form">
+      {verified && !error && <p className="verified-notice">{t.verifiedNotice}</p>}
+
       <button
         className="oauth-btn oauth-github"
         onClick={() => handleOAuth('github')}
@@ -156,7 +230,24 @@ export default function LoginForm({ translations: t, signupPath, dashboardPath }
           />
         </div>
 
-        {error && <p className="error-msg">{error}</p>}
+        {error && (
+          <p className={`error-msg error-${errorKind ?? 'generic'}`}>
+            {error}
+            {errorKind === 'not_confirmed' && !resent && (
+              <button
+                type="button"
+                className="resend-btn"
+                onClick={handleResend}
+                disabled={resending || !email}
+              >
+                {resending ? '...' : t.resendConfirm}
+              </button>
+            )}
+            {errorKind === 'not_confirmed' && resent && (
+              <span className="confirm-sent">{t.confirmSent}</span>
+            )}
+          </p>
+        )}
 
         <button type="submit" className="submit-btn" disabled={loading}>
           {loading ? '...' : t.loginBtn}

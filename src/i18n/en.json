@@ -95,7 +95,12 @@
     "errorConfirm": "Passwords do not match",
     "errorExists": "An account with this email already exists",
     "errorInvalid": "Invalid email or password",
-    "errorGeneric": "Something went wrong. Please try again."
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorNotConfirmed": "Email not verified. Please check your inbox to verify your account,",
+    "errorRateLimit": "Too many attempts. Please try again later.",
+    "resendConfirm": "Resend",
+    "confirmSent": "Verification email resent. Please check your inbox.",
+    "verifiedNotice": "Registration successful! Please check your inbox to verify your account."
   },
   "dashboard": {
     "welcome": "Welcome back",

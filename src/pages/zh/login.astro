@@ -126,6 +126,40 @@ const t = getTranslations(locale);
     font-size: 0.82rem;
     padding: 4px 0;
   }
+  :global(.error-msg.error-not_confirmed) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  :global(.resend-btn) {
+    background: none;
+    border: none;
+    color: var(--gold);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  :global(.resend-btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  :global(.confirm-sent) {
+    color: var(--gold);
+    font-size: 0.8rem;
+  }
+  :global(.verified-notice) {
+    color: var(--gold);
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-bottom: 16px;
+  }
   :global(.submit-btn) {
     width: 100%;
     padding: 12px;
