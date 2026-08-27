@@ -122,6 +122,7 @@ export default function Dashboard({
         });
         setStatsByDimension(statsMap);
         setRecentSessions(sessions);
+        setLoadingStats(false);
       } catch (err) {
         console.error('Dashboard auth/load error:', err);
         setChecking(false);

@@ -517,3 +517,27 @@ begin
   );
 end;
 $$;
+
+-- ============================================================
+-- 权限：授予 authenticated 角色必要的表操作权限
+-- RLS 策略控制行级访问，GRANT 控制表级权限
+-- ============================================================
+
+-- sessions 表：用户需要 INSERT (保存训练), UPDATE (更新), DELETE (删除)
+GRANT INSERT, UPDATE, DELETE ON public.sessions TO authenticated;
+
+-- scores 表：用户需要 INSERT (保存成绩), UPDATE (更新), DELETE (删除)
+GRANT INSERT, UPDATE, DELETE ON public.scores TO authenticated;
+
+-- profiles 表：用户需要 INSERT (注册时创建), UPDATE (更新资料)
+GRANT INSERT, UPDATE ON public.profiles TO authenticated;
+
+-- achievements 表：用户需要 INSERT (解锁成就), DELETE (删除)
+GRANT INSERT, DELETE ON public.achievements TO authenticated;
+
+-- follows 表：用户需要 INSERT (关注), DELETE (取消关注)
+GRANT INSERT, DELETE ON public.follows TO authenticated;
+
+-- training_plans 和 plan_items：用户需要完整 CRUD
+GRANT INSERT, UPDATE, DELETE ON public.training_plans TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.plan_items TO authenticated;
